@@ -1,8 +1,8 @@
 package com.example.goonthug_demo_backend.service;
 
 
-import com.example.demo.model.User;
-import com.example.demo.repository.UserRepository;
+import com.example.goonthug_demo_backend.model.User;
+import com.example.goonthug_demo_backend.repository.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

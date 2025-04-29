@@ -1,7 +1,7 @@
 package com.example.goonthug_demo_backend.model;
 
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "testers")

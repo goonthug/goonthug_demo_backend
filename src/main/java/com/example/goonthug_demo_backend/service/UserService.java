@@ -2,13 +2,14 @@ package com.example.goonthug_demo_backend.service;
 
 
 
-import com.example.demo.dto.UserRegistrationDto;
-import com.example.demo.model.Company;
-import com.example.demo.model.Tester;
-import com.example.demo.model.User;
-import com.example.demo.repository.CompanyRepository;
-import com.example.demo.repository.TesterRepository;
-import com.example.demo.repository.UserRepository;
+
+import com.example.goonthug_demo_backend.dto.UserRegistrationDto;
+import com.example.goonthug_demo_backend.model.Company;
+import com.example.goonthug_demo_backend.model.Tester;
+import com.example.goonthug_demo_backend.model.User;
+import com.example.goonthug_demo_backend.repository.CompanyRepository;
+import com.example.goonthug_demo_backend.repository.TesterRepository;
+import com.example.goonthug_demo_backend.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 

@@ -1,9 +1,10 @@
 package com.example.goonthug_demo_backend.controller;
 
 
-import com.example.demo.dto.UserLoginDto;
-import com.example.demo.dto.UserRegistrationDto;
-import com.example.demo.service.UserService;
+
+import com.example.goonthug_demo_backend.dto.UserLoginDto;
+import com.example.goonthug_demo_backend.dto.UserRegistrationDto;
+import com.example.goonthug_demo_backend.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
