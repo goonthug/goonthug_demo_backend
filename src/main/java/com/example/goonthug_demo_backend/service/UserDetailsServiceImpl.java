@@ -1,6 +1,5 @@
 package com.example.goonthug_demo_backend.service;
 
-
 import com.example.goonthug_demo_backend.model.User;
 import com.example.goonthug_demo_backend.repository.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
