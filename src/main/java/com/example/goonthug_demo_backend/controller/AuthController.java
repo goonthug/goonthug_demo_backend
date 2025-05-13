@@ -1,7 +1,5 @@
 package com.example.goonthug_demo_backend.controller;
 
-
-
 import com.example.goonthug_demo_backend.dto.UserLoginDto;
 import com.example.goonthug_demo_backend.dto.UserRegistrationDto;
 import com.example.goonthug_demo_backend.service.UserService;
@@ -21,25 +19,54 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
 
-    public AuthController(UserService userService, AuthenticationManager authenticationManager, JwtUtil jwtUtil) {
+    public AuthController(UserService userService, AuthenticationManager authenticationManager,
+                          JwtUtil jwtUtil) {
         this.userService = userService;
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody UserRegistrationDto dto) {
-        userService.registerUser(dto);
-        return ResponseEntity.ok("User registered successfully");
+    public ResponseEntity<?> register(@RequestBody UserRegistrationDto dto) {
+        try {
+            // Регистрируем пользователя
+            userService.registerUser(dto);
+            // Возвращаем сообщение об успешной регистрации
+            return ResponseEntity.ok("User registered successfully");
+        } catch (IllegalArgumentException e) {
+            // Возвращаем ошибку, если username уже существует
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody UserLoginDto dto) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(dto.getUsername(), dto.getPassword()));
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        String role = userDetails.getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
-        String jwt = jwtUtil.generateToken(dto.getUsername(), role);
-        return ResponseEntity.ok(jwt);
+    public ResponseEntity<?> login(@RequestBody UserLoginDto dto) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(dto.getUsername(), dto.getPassword()));
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            String role = userDetails.getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
+            String jwt = jwtUtil.generateToken(dto.getUsername(), role);
+            return ResponseEntity.ok(new AuthResponse(jwt));
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body("Invalid username or password");
+        }
+    }
+
+    // Вспомогательный класс для ответа с токеном
+    private static class AuthResponse {
+        private String token;
+
+        public AuthResponse(String token) {
+            this.token = token;
+        }
+
+        public String getToken() {
+            return token;
+        }
+
+        public void setToken(String token) {
+            this.token = token;
+        }
     }
 }

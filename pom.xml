@@ -20,8 +20,6 @@
 		<java.version>17</java.version>
 		<springdoc.version>2.0.2</springdoc.version>
 		<modelmapper.version>3.1.1</modelmapper.version>
-		<thymeleaf-extras-springsecurity.version>3.1.1</thymeleaf-extras-springsecurity.version>
-		<thymeleaf-layout-dialect.version>3.1.0</thymeleaf-layout-dialect.version>
 	</properties>
 
 	<dependencies>
@@ -42,10 +40,6 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-thymeleaf</artifactId>
 		</dependency>
 
 		<!-- Servlet API -->
@@ -70,23 +64,24 @@
 			<version>0.9.1</version>
 		</dependency>
 
+		<!-- JAXB API и реализация для jjwt -->
+		<dependency>
+			<groupId>jakarta.xml.bind</groupId>
+			<artifactId>jakarta.xml.bind-api</artifactId>
+			<version>4.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.xml.bind</groupId>
+			<artifactId>jaxb-impl</artifactId>
+			<version>4.0.5</version>
+			<scope>runtime</scope>
+		</dependency>
+
 		<!-- Swagger -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>${springdoc.version}</version>
-		</dependency>
-
-		<!-- Thymeleaf Extras -->
-		<dependency>
-			<groupId>org.thymeleaf.extras</groupId>
-			<artifactId>thymeleaf-extras-springsecurity6</artifactId>
-			<version>${thymeleaf-extras-springsecurity.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>nz.net.ultraq.thymeleaf</groupId>
-			<artifactId>thymeleaf-layout-dialect</artifactId>
-			<version>${thymeleaf-layout-dialect.version}</version>
 		</dependency>
 
 		<!-- ModelMapper -->
@@ -100,13 +95,6 @@
 		<dependency>
 			<groupId>org.eclipse.angus</groupId>
 			<artifactId>jakarta.mail</artifactId>
-		</dependency>
-
-		<!-- Webjars for Bootstrap -->
-		<dependency>
-			<groupId>org.webjars</groupId>
-			<artifactId>bootstrap</artifactId>
-			<version>5.3.3</version>
 		</dependency>
 
 		<!-- Dev Tools -->

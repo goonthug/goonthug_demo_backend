@@ -13,8 +13,7 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    private String SECRET_KEY = "your_secret_key_1234567890";
-    private long TOKEN_VALIDITY = 1000 * 60 * 60 * 10;
+    private String SECRET_KEY = "12121212121212121212112212121212"; // Замените на более безопасный ключ
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -48,7 +47,7 @@ public class JwtUtil {
                 .setClaims(claims)
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + TOKEN_VALIDITY))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 часов
                 .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
                 .compact();
     }
