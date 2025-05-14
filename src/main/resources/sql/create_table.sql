@@ -6,6 +6,7 @@ DELETE FROM companies;
 DELETE FROM testers;
 DELETE FROM users;
 
+SELECT * FROM users WHERE username = 'company4';
 SELECT * FROM users WHERE username = 'company3';
 
 

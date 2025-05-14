@@ -68,5 +68,10 @@ public class AuthController {
         public void setToken(String token) {
             this.token = token;
         }
+        @GetMapping("/test")
+        public ResponseEntity<String> test() {
+            return ResponseEntity.ok("Test endpoint is accessible");
+        }
+
     }
 }
