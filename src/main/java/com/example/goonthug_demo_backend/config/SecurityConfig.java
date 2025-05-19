@@ -1,6 +1,6 @@
 package com.example.goonthug_demo_backend.config;
 
-import com.example.goonthug_demo_backend.service.UserService;
+import com.example.goonthug_demo_backend.service.UserDetailsServiceImpl;
 import com.example.goonthug_demo_backend.util.JwtRequestFilter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -24,7 +24,7 @@ public class SecurityConfig {
     private final JwtRequestFilter jwtRequestFilter;
     private final UserDetailsService userDetailsService;
 
-    public SecurityConfig(JwtRequestFilter jwtRequestFilter, @Qualifier("userService") UserService userDetailsService) {
+    public SecurityConfig(JwtRequestFilter jwtRequestFilter, UserDetailsServiceImpl userDetailsService) {
         this.jwtRequestFilter = jwtRequestFilter;
         this.userDetailsService = userDetailsService;
     }
