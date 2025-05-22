@@ -31,9 +31,9 @@ public class GameDemoController {
         return ResponseEntity.ok(gameDemo);
     }
 
-    @GetMapping("/download/{id}")
+    @GetMapping("/api/games/demo/download/{id}")
     @PreAuthorize("hasRole('TESTER')")
-    public ResponseEntity<Resource> downloadGameDemo(@PathVariable Long id) throws Exception {
+    public ResponseEntity<?> downloadGameDemo(@PathVariable Long id) throws Exception {
         Resource resource = gameDemoService.downloadGameDemo(id);
         String contentType = "application/octet-stream";
         String headerValue = "attachment; filename=\"" + resource.getFilename() + "\"";
