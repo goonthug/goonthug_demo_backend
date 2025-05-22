@@ -1,6 +1,7 @@
 SELECT * FROM users;
 SELECT * FROM companies;
 SELECT * FROM testers;
+SELECT * FROM games;
 
 DELETE FROM companies;
 DELETE FROM testers;

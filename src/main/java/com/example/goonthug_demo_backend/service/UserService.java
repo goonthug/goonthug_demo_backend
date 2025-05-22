@@ -36,7 +36,7 @@ public class UserService {
         User user = new User();
         user.setUsername(dto.getUsername());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        user.setRole(User.Role.valueOf(dto.getRole()));
+        user.setRole(dto.getRole()); // Используем строку из DTO напрямую
         userRepository.save(user);
 
         // Создаем запись в зависимости от роли

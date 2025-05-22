@@ -44,7 +44,7 @@ public class GameDemoService {
         User company = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-        if (company.getRole() != User.Role.COMPANY) {
+        if (!company.getRole().equals("COMPANY")) {
             throw new RuntimeException("Only users with COMPANY role can upload game demos");
         }
 

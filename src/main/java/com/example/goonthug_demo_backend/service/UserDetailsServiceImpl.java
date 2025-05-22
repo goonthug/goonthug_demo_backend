@@ -22,7 +22,7 @@ public class UserDetailsServiceImpl implements org.springframework.security.core
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername())
                 .password(user.getPassword())
-                .roles(user.getRole().name())
+                .roles(user.getRole()) // Убрали .name(), так как role уже строка
                 .build();
     }
 }
