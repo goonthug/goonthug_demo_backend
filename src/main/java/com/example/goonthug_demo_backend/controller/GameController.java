@@ -65,10 +65,10 @@ public class GameController {
 
     @GetMapping("/download/{id}")
     @PreAuthorize("hasRole('TESTER')")
-    public ResponseEntity<byte[]> downloadGame(@PathVariable Long id, Principal principal) {
+    public ResponseEntity<?> downloadGame(@PathVariable Long id, Principal principal) {
         if (id <= 0) {
             logger.warn("Некорректный gameId: {}", id);
-            return ResponseEntity.badRequest().body("ID игры должен быть положительным".getBytes());
+            return ResponseEntity.badRequest().body("ID игры должен быть положительным");
         }
         logger.info("Тестер {} пытается скачать игру с id {}", principal.getName(), id);
         try {
@@ -80,10 +80,10 @@ public class GameController {
                     .body(game.getFileContent());
         } catch (IllegalArgumentException e) {
             logger.warn("Ошибка при скачивании игры: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage().getBytes());
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             logger.error("Внутренняя ошибка при скачивании игры: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Внутренняя ошибка сервера: ".getBytes());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Внутренняя ошибка сервера: " + e.getMessage());
         }
     }
 }

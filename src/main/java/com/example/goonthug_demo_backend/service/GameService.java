@@ -69,38 +69,32 @@ public class GameService {
 
     public Game uploadGame(MultipartFile file, String title, String username) throws IOException {
         logger.debug("Поиск компании с username: {}", username);
-        User companyUser = userRepository.findByUsername(username)
+        User company = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("Компания не найдена"));
 
-        if (!companyUser.getRole().equals("COMPANY")) {
+        if (!company.getRole().equals("COMPANY")) {
             logger.warn("Пользователь {} не является компанией", username);
             throw new IllegalArgumentException("Только компании могут загружать игры");
         }
-
-        logger.debug("Поиск записи компании для пользователя: {}", username);
-        Company company = companyRepository.findByUser(companyUser)
-                .orElseThrow(() -> new IllegalArgumentException("Запись компании не найдена"));
 
         logger.debug("Сохранение файла игры: {}", title);
         Game game = new Game();
         game.setTitle(title);
         game.setFileName(file.getOriginalFilename());
         game.setFileContent(file.getBytes());
-        game.setCompany(company);
+        game.setCompany(companyRepository.findByUser(company)
+                .orElseThrow(() -> new IllegalArgumentException("Запись компании не найдена")));
 
         logger.info("Сохранение игры {} в базе данных", title);
-        return gameRepository.save(game);
+        Game savedGame = gameRepository.save(game);
+        logger.info("Игра с id {} успешно сохранена", savedGame.getId());
+        return savedGame;
     }
 
     public Game downloadGame(Long gameId, String username) {
         logger.debug("Поиск тестера с username: {}", username);
         User tester = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("Тестер не найден"));
-
-        if (!tester.getRole().equals("TESTER")) {
-            logger.warn("Пользователь {} не является тестером", username);
-            throw new IllegalArgumentException("Только тестеры могут скачивать игры");
-        }
 
         logger.debug("Поиск игры с id: {}", gameId);
         Game game = gameRepository.findById(gameId)
@@ -114,8 +108,8 @@ public class GameService {
         }
 
         if (game.getFileContent() == null || game.getFileContent().length == 0) {
-            logger.warn("Файл игры с id {} пустой", gameId);
-            throw new IllegalArgumentException("Файл игры пустой");
+            logger.error("Файл игры с id {} пустой или отсутствует", gameId);
+            throw new IllegalArgumentException("Файл игры пустой или отсутствует");
         }
 
         logger.info("Игра с id {} готова для скачивания тестером {}", gameId, username);

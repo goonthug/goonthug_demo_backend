@@ -2,6 +2,9 @@ SELECT * FROM users;
 SELECT * FROM companies;
 SELECT * FROM testers;
 SELECT * FROM games;
+SELECT * FROM game_assignments WHERE game_id = 1 AND status = 'в работе';
+
+
 
 DELETE FROM companies;
 DELETE FROM testers;
