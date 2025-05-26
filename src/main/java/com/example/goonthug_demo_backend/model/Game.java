@@ -1,11 +1,9 @@
 package com.example.goonthug_demo_backend.model;
 
 import jakarta.persistence.*;
-
 @Entity
 @Table(name = "games")
 public class Game {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -22,10 +20,6 @@ public class Game {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")
     private Company company;
-
-    // Конструкторы
-    public Game() {
-    }
 
     // Геттеры и сеттеры
     public Long getId() {
