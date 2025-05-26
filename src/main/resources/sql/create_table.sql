@@ -4,11 +4,13 @@ SELECT * FROM companies;
 SELECT * FROM testers;
 SELECT * FROM games;
 SELECT * FROM game_assignments WHERE game_id = 1 AND status = 'в работе';
+SELECT * FROM game_assignments;
 
 -- Очистка данных
 DELETE FROM companies;
 DELETE FROM testers;
 DELETE FROM users;
+
 
 -- Проверки по пользователям
 SELECT * FROM users WHERE username = 'company4';
@@ -39,3 +41,9 @@ CREATE TABLE game_assignments (
     FOREIGN KEY (game_id) REFERENCES games(id),
     FOREIGN KEY (tester_id) REFERENCES users(id)
 );
+
+\d games
+\d users
+
+
+DROP TABLE game_assignments CASCADE;
