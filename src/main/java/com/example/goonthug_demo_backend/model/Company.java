@@ -3,14 +3,13 @@ package com.example.goonthug_demo_backend.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "companies")
+@Table(name = "companies") // Убедитесь, что имя таблицы правильное
 public class Company {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "company_name", nullable = false)
+    @Column(name = "company_name") // Соответствует ли имени колонки в БД?
     private String companyName;
 
     @OneToOne

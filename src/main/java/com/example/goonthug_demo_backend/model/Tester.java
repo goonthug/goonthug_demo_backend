@@ -4,7 +4,7 @@ package com.example.goonthug_demo_backend.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "testers")
+@Table(name = "testers") // Правильное имя таблицы
 public class Tester {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -14,10 +14,10 @@ public class Tester {
     @JoinColumn(name = "user_id", unique = true, nullable = false)
     private User user;
 
-    @Column(nullable = false)
+    @Column(name = "first_name") // Соответствует БД?
     private String firstName;
 
-    @Column(nullable = false)
+    @Column(name = "last_name") // Соответствует БД?
     private String lastName;
 
     // Геттеры и сеттеры

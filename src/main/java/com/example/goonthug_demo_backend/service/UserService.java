@@ -7,6 +7,8 @@ import com.example.goonthug_demo_backend.model.User;
 import com.example.goonthug_demo_backend.repository.CompanyRepository;
 import com.example.goonthug_demo_backend.repository.TesterRepository;
 import com.example.goonthug_demo_backend.repository.UserRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +20,8 @@ public class UserService {
     private final TesterRepository testerRepository;
     private final PasswordEncoder passwordEncoder;
 
+
+    @Autowired
     public UserService(UserRepository userRepository, CompanyRepository companyRepository,
                        TesterRepository testerRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
@@ -26,31 +30,30 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    @Transactional
     public void registerUser(UserRegistrationDto dto) {
-        // Проверяем, существует ли пользователь с таким username
+        System.out.println("Starting registration for: " + dto.getUsername());
         if (userRepository.findByUsername(dto.getUsername()).isPresent()) {
-            throw new IllegalArgumentException("Username '" + dto.getUsername() + "' already exists");
+            throw new IllegalArgumentException("Username already exists");
         }
 
-        // Создаем нового пользователя
         User user = new User();
         user.setUsername(dto.getUsername());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        user.setRole(dto.getRole()); // Используем строку из DTO напрямую
-        userRepository.save(user);
+        user.setRole(dto.getRole());
+        user = userRepository.save(user); // Сохраняем пользователя сразу
 
-        // Создаем запись в зависимости от роли
-        if (dto.getRole().equals("COMPANY")) {
+        // Создаем связанные сущности
+        if ("COMPANY".equals(dto.getRole())) {
             Company company = new Company();
-            company.setUser(user);
             company.setCompanyName(dto.getCompanyName());
+            company.setUser(user);
             companyRepository.save(company);
-        } else if (dto.getRole().equals("TESTER")) {
+        } else if ("TESTER".equals(dto.getRole())) {
             Tester tester = new Tester();
             tester.setUser(user);
             tester.setFirstName(dto.getFirstName());
             tester.setLastName(dto.getLastName());
             testerRepository.save(tester);
         }
-    }
-}
+    }}

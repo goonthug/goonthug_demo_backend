@@ -2,14 +2,26 @@
 SELECT * FROM users;
 SELECT * FROM companies;
 SELECT * FROM testers;
-SELECT * FROM games;
+SELECT * FROM game_demo;
 SELECT * FROM game_assignments WHERE game_id = 1 AND status = 'в работе';
 SELECT * FROM game_assignments;
+
+
+
+SELECT * FROM information_schema.tables
+WHERE table_name = 'game_demo';
+
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'game_demo';
+
+
 
 -- Очистка данных
 DELETE FROM companies;
 DELETE FROM testers;
 DELETE FROM users;
+
 
 
 -- Проверки по пользователям
@@ -45,5 +57,18 @@ CREATE TABLE game_assignments (
 \d games
 \d users
 
+-- Проверьте существование таблиц
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public'
+  AND table_name IN ('users', 'companies', 'testers');
 
-DROP TABLE game_assignments CASCADE;
+-- Проверьте колонки в таблицах
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'companies';
+
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'testers';
+

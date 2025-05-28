@@ -1,6 +1,8 @@
 package com.example.goonthug_demo_backend.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 public class GameDemo {
@@ -11,14 +13,17 @@ public class GameDemo {
 
     private String title;
 
-    private String filePath;
+    @Lob
+    @JdbcTypeCode(SqlTypes.BLOB) // Явное указание типа для Hibernate 6
+    private byte[] fileContent;
+
+    private String fileName;
 
     @ManyToOne
     @JoinColumn(name = "company_id")
     private User company;
 
     private Double minTesterRating;
-
     private Boolean requiresManualSelection;
 
     // Геттеры и сеттеры
@@ -38,12 +43,20 @@ public class GameDemo {
         this.title = title;
     }
 
-    public String getFilePath() {
-        return filePath;
+    public byte[] getFileContent() {
+        return fileContent;
     }
 
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
+    public void setFileContent(byte[] fileContent) {
+        this.fileContent = fileContent;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 
     public User getCompany() {
