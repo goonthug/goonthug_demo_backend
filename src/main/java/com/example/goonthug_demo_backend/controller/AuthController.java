@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api")
+@CrossOrigin(origins = "http://localhost:5176", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST})
 public class AuthController {
 
     private final UserService userService;
@@ -26,32 +27,32 @@ public class AuthController {
         this.jwtUtil = jwtUtil;
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody UserRegistrationDto dto) {
-        try {
-            // Регистрируем пользователя
-            userService.registerUser(dto);
-            // Возвращаем сообщение об успешной регистрации
-            return ResponseEntity.ok("User registered successfully");
-        } catch (IllegalArgumentException e) {
-            // Возвращаем ошибку, если username уже существует
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody UserLoginDto dto) {
-        try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(dto.getUsername(), dto.getPassword()));
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            String role = userDetails.getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
-            String jwt = jwtUtil.generateToken(dto.getUsername(), role);
-            return ResponseEntity.ok(new AuthResponse(jwt));
-        } catch (Exception e) {
-            return ResponseEntity.status(401).body("Invalid username or password");
-        }
-    }
+//    @PostMapping("/register")
+//    public ResponseEntity<?> register(@RequestBody UserRegistrationDto dto) {
+//        try {
+//            // Регистрируем пользователя
+//            userService.registerUser(dto);
+//            // Возвращаем сообщение об успешной регистрации
+//            return ResponseEntity.ok("User registered successfully");
+//        } catch (IllegalArgumentException e) {
+//            // Возвращаем ошибку, если username уже существует
+//            return ResponseEntity.badRequest().body(e.getMessage());
+//        }
+//    }
+//
+//    @PostMapping("/login")
+//    public ResponseEntity<?> login(@RequestBody UserLoginDto dto) {
+//        try {
+//            Authentication authentication = authenticationManager.authenticate(
+//                    new UsernamePasswordAuthenticationToken(dto.getUsername(), dto.getPassword()));
+//            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+//            String role = userDetails.getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
+//            String jwt = jwtUtil.generateToken(dto.getUsername(), role);
+//            return ResponseEntity.ok(new AuthResponse(jwt));
+//        } catch (Exception e) {
+//            return ResponseEntity.status(401).body("Invalid username or password");
+//        }
+//    }
 
     // Вспомогательный класс для ответа с токеном
     private static class AuthResponse {

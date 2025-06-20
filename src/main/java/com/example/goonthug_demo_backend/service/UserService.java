@@ -1,3 +1,4 @@
+// src/main/java/com/example/goonthug_demo_backend/service/UserService.java
 package com.example.goonthug_demo_backend.service;
 
 import com.example.goonthug_demo_backend.dto.UserRegistrationDto;
@@ -20,7 +21,6 @@ public class UserService {
     private final TesterRepository testerRepository;
     private final PasswordEncoder passwordEncoder;
 
-
     @Autowired
     public UserService(UserRepository userRepository, CompanyRepository companyRepository,
                        TesterRepository testerRepository, PasswordEncoder passwordEncoder) {
@@ -40,7 +40,8 @@ public class UserService {
         User user = new User();
         user.setUsername(dto.getUsername());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        user.setRole(dto.getRole());
+        // Преобразуем строку в перечисление User.Role
+        user.setRole(User.Role.valueOf(dto.getRole().toUpperCase()));
         user = userRepository.save(user); // Сохраняем пользователя сразу
 
         // Создаем связанные сущности
@@ -56,4 +57,5 @@ public class UserService {
             tester.setLastName(dto.getLastName());
             testerRepository.save(tester);
         }
-    }}
+    }
+}

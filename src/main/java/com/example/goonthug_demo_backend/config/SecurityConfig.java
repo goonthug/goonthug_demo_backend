@@ -1,3 +1,4 @@
+// src/main/java/com/example/goonthug_demo_backend/config/SecurityConfig.java
 package com.example.goonthug_demo_backend.config;
 
 import com.example.goonthug_demo_backend.service.UserDetailsServiceImpl;
@@ -22,7 +23,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtRequestFilter jwtRequestFilter;
-    private final UserDetailsService userDetailsService;
+    private final UserDetailsServiceImpl userDetailsService;
 
     public SecurityConfig(JwtRequestFilter jwtRequestFilter, UserDetailsServiceImpl userDetailsService) {
         this.jwtRequestFilter = jwtRequestFilter;

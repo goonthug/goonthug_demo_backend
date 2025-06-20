@@ -8,7 +8,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 
 @SpringBootApplication
-public class GoonthugDemoBackendApplication implements CommandLineRunner {
+public class 	GoonthugDemoBackendApplication implements CommandLineRunner {
 	@Value("${server.port}") // Вытаскивает порт из application.properties. Аннотация Beans Factory
 	private String serverPort;
 
