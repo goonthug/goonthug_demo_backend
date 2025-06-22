@@ -5,6 +5,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 @Entity
+@Table(name = "game_demo_archive") // Уникальное имя таблицы
 public class GameDemo {
 
     @Id

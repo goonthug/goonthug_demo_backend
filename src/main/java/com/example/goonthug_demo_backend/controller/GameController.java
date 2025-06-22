@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/games")
@@ -85,5 +86,12 @@ public class GameController {
             logger.error("Внутренняя ошибка при скачивании игры: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Внутренняя ошибка сервера: " + e.getMessage());
         }
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Game>> getAllGames() {
+        List<Game> games = gameService.getAllGames();
+        logger.info("Fetched games: {}", games);
+        return ResponseEntity.ok(games);
     }
 }

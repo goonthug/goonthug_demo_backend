@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:5183", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST})
+@CrossOrigin(origins = "http://localhost:5175", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST})
 public class AuthController {
 
     private final UserService userService;

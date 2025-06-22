@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 
 @Service
 public class GameService {
@@ -63,6 +64,7 @@ public class GameService {
         game.setFileName(uniqueFileName);
         game.setFileContent(file.getBytes());
         game.setCompany(company);
+        game.setStatus("available"); // Устанавливаем начальный статус
 
         logger.info("Сохранение игры в базу данных: {}", title);
         Game savedGame = gameRepository.save(game);
@@ -93,6 +95,8 @@ public class GameService {
         assignment.setStatus("в работе");
 
         gameAssignmentRepository.save(assignment);
+        game.setStatus("в работе"); // Обновляем статус игры
+        gameRepository.save(game); // Сохраняем обновлённый статус
         logger.info("Игра с ID {} назначена тестеру {}", gameId, username);
     }
 
@@ -100,20 +104,16 @@ public class GameService {
     public Game downloadGame(Long gameId, String username) {
         logger.debug("Скачивание игры с ID {} пользователем {}", gameId, username);
 
-        // Находим пользователя (тестера)
         User tester = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
 
-        // Проверяем, что пользователь имеет роль TESTER
         if (!tester.getRole().equals("TESTER")) {
             throw new IllegalArgumentException("Только тестеры могут скачивать игры");
         }
 
-        // Находим игру
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new IllegalArgumentException("Игра с ID " + gameId + " не найдена"));
 
-        // Проверяем, назначена ли игра этому тестеру
         boolean isAssigned = gameAssignmentRepository.existsByGameIdAndTesterIdAndStatus(
                 gameId, tester.getId(), "в работе");
         if (!isAssigned) {
@@ -121,5 +121,17 @@ public class GameService {
         }
 
         return game;
+    }
+
+    public List<Game> getAllGames() {
+        List<Game> games = gameRepository.findAll();
+        games.forEach(game -> {
+            if (gameAssignmentRepository.existsByGameIdAndStatus(game.getId(), "в работе")) {
+                game.setStatus("в работе");
+            } else {
+                game.setStatus("available");
+            }
+        });
+        return games;
     }
 }

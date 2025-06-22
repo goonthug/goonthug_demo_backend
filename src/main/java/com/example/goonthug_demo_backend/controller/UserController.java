@@ -20,7 +20,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:5183", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST})
+@CrossOrigin(origins = "http://localhost:5175", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST})
 public class UserController {
 
     @Autowired

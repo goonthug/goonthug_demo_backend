@@ -15,7 +15,11 @@ SELECT column_name, data_type
 FROM information_schema.columns
 WHERE table_name = 'game_demo';
 
+SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';
 
+ALTER TABLE game_demo ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'available';
+SELECT column_name FROM information_schema.columns WHERE table_name = 'game_demo';
+SELECT id, title, status FROM game_demo;
 
 -- Очистка данных
 DELETE FROM companies;
