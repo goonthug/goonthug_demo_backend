@@ -1,5 +1,6 @@
 package com.example.goonthug_demo_backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -22,14 +23,15 @@ public class Game {
     @Column(name = "requires_manual_selection")
     private Boolean requiresManualSelection;
 
-    @Column(name = "title")
-    private String title;
-
     @Column(name = "status")
     private String status;
 
+    @Column(name = "title")
+    private String title;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")
+    @JsonIgnore
     private Company company;
 
     // Геттеры и сеттеры (только необходимые для примера)

@@ -1,6 +1,9 @@
 package com.example.goonthug_demo_backend.controller;
 
+import com.example.goonthug_demo_backend.dto.GameDTO;
 import com.example.goonthug_demo_backend.model.Game;
+import com.example.goonthug_demo_backend.model.User;
+import com.example.goonthug_demo_backend.repository.UserRepository;
 import com.example.goonthug_demo_backend.service.GameService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,10 +26,12 @@ public class GameController {
 
     private static final Logger logger = LoggerFactory.getLogger(GameController.class);
     private final GameService gameService;
+    private final UserRepository userRepository;
 
     @Autowired
-    public GameController(GameService gameService) {
+    public GameController(GameService gameService, UserRepository userRepository) {
         this.gameService = gameService;
+        this.userRepository = userRepository;
     }
 
     @PostMapping("/{id}/assign")
@@ -49,18 +55,25 @@ public class GameController {
     @PreAuthorize("hasRole('COMPANY')")
     public ResponseEntity<?> uploadGame(@RequestParam("file") MultipartFile file,
                                         @RequestParam("title") String title,
+                                        @RequestParam("minTesterRating") Integer minTesterRating,
+                                        @RequestParam("requiresManualSelection") Boolean requiresManualSelection,
                                         Principal principal) {
         logger.info("Пользователь {} пытается загрузить игру: {}", principal.getName(), title);
         try {
-            Game game = gameService.uploadGame(file, title, principal.getName());
+            Game game = new Game();
+            game.setFileContent(file.getBytes());
+            game.setFileName(file.getOriginalFilename());
+            game.setTitle(title);
+            game.setMinTesterRating(minTesterRating);
+            game.setRequiresManualSelection(requiresManualSelection);
+            game.setStatus("available");
+            game.setCompany(gameService.getCompanyByUsername(principal.getName()));
+            gameService.save(game);
             logger.info("Игра {} успешно загружена пользователем {}", title, principal.getName());
-            return ResponseEntity.ok(game);
+            return ResponseEntity.ok("Игра успешно загружена");
         } catch (IOException e) {
             logger.error("Ошибка при загрузке файла: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ошибка при загрузке файла: " + e.getMessage());
-        } catch (IllegalArgumentException e) {
-            logger.warn("Ошибка при загрузке игры: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -89,9 +102,23 @@ public class GameController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Game>> getAllGames() {
-        List<Game> games = gameService.getAllGames();
-        logger.info("Fetched games: {}", games);
-        return ResponseEntity.ok(games);
+    public ResponseEntity<List<GameDTO>> getAllGames() {
+        try {
+            List<GameDTO> games = gameService.getAllGames();
+            logger.info("Fetched games: {}", games);
+            return ResponseEntity.ok(games);
+        } catch (Exception e) {
+            logger.error("Ошибка при получении списка игр: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/../user/profile")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<User> getUserProfile(Principal principal) {
+        logger.info("Пользователь {} запрашивает свой профиль", principal.getName());
+        User user = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден: " + principal.getName()));
+        return ResponseEntity.ok(user);
     }
 }

@@ -3,9 +3,12 @@ SELECT * FROM users;
 SELECT * FROM companies;
 SELECT * FROM testers;
 SELECT * FROM game_demo;
+SELECT * FROM game_demo_archive;
 SELECT * FROM game_assignments WHERE game_id = 1 AND status = 'в работе';
 SELECT * FROM game_assignments;
 
+SELECT * FROM games;
+SELECT * FROM game_assignments;
 
 
 SELECT * FROM information_schema.tables

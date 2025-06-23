@@ -19,16 +19,16 @@ public class GameDemoController {
         this.gameDemoService = gameDemoService;
     }
 
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('COMPANY')")
-    public ResponseEntity<GameDemo> uploadGameDemo(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("title") String title,
-            @RequestParam(value = "minTesterRating", required = false) Double minTesterRating,
-            @RequestParam(value = "requiresManualSelection", required = false) Boolean requiresManualSelection) throws Exception {
-        GameDemo gameDemo = gameDemoService.uploadGameDemo(file, title, minTesterRating, requiresManualSelection);
-        return ResponseEntity.ok(gameDemo);
-    }
+//    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    @PreAuthorize("hasRole('COMPANY')")
+//    public ResponseEntity<GameDemo> uploadGameDemo(
+//            @RequestParam("file") MultipartFile file,
+//            @RequestParam("title") String title,
+//            @RequestParam(value = "minTesterRating", required = false) Double minTesterRating,
+//            @RequestParam(value = "requiresManualSelection", required = false) Boolean requiresManualSelection) throws Exception {
+//        GameDemo gameDemo = gameDemoService.uploadGameDemo(file, title, minTesterRating, requiresManualSelection);
+//        return ResponseEntity.ok(gameDemo);
+//    }
 
     @GetMapping("/demo/download/{id}")
     @PreAuthorize("hasRole('TESTER')")

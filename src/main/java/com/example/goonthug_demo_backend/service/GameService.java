@@ -8,6 +8,8 @@ import com.example.goonthug_demo_backend.repository.CompanyRepository;
 import com.example.goonthug_demo_backend.repository.GameAssignmentRepository;
 import com.example.goonthug_demo_backend.repository.GameRepository;
 import com.example.goonthug_demo_backend.repository.UserRepository;
+import com.example.goonthug_demo_backend.dto.GameDTO; // Добавь импорт DTO
+import org.modelmapper.ModelMapper; // Добавь импорт ModelMapper
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class GameService {
@@ -39,6 +42,29 @@ public class GameService {
 
     @Autowired
     private CompanyRepository companyRepository;
+
+    @Autowired
+    private ModelMapper modelMapper; // Добавь поле для ModelMapper
+
+    // Новый метод для получения компании по имени пользователя
+    public Company getCompanyByUsername(String username) {
+        System.out.println("Ищем пользователя с username: " + username); // Отладка
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
+        System.out.println("Найден пользователь: " + user.getUsername() + ", роль: " + user.getRole()); // Отладка
+        if (user.getRole() != User.Role.COMPANY) { // Сравнение с enum
+            throw new IllegalArgumentException("Пользователь не является компанией");
+        }
+        Company company = companyRepository.findByUser(user)
+                .orElseThrow(() -> new IllegalArgumentException("Компания не найдена для пользователя"));
+        System.out.println("Найдена компания с ID: " + company.getId()); // Отладка
+        return company;
+    }
+
+    // Новый метод для сохранения игры
+    public void save(Game game) {
+        gameRepository.save(game);
+    }
 
     @Transactional
     public Game uploadGame(MultipartFile file, String title, String username) throws IOException {
@@ -123,15 +149,31 @@ public class GameService {
         return game;
     }
 
-    public List<Game> getAllGames() {
-        List<Game> games = gameRepository.findAll();
-        games.forEach(game -> {
-            if (gameAssignmentRepository.existsByGameIdAndStatus(game.getId(), "в работе")) {
-                game.setStatus("в работе");
-            } else {
-                game.setStatus("available");
-            }
-        });
-        return games;
+    public List<GameDTO> getAllGames() { // Измени тип возвращаемого значения на GameDTO
+        try {
+            List<Game> games = gameRepository.findAllWithCompany();
+            logger.info("Найдено игр в game_demo: {}", games.size());
+            games.forEach(game -> {
+                try {
+                    logger.debug("Проверка игры ID: {}, текущий статус: {}", game.getId(), game.getStatus());
+                    if (gameAssignmentRepository.existsByGameIdAndStatus(game.getId(), "в работе")) {
+                        game.setStatus("в работе");
+                        logger.debug("Статус игры {} изменён на 'в работе'", game.getId());
+                    } else {
+                        game.setStatus("available");
+                        logger.debug("Статус игры {} установлен как 'available'", game.getId());
+                    }
+                } catch (Exception e) {
+                    logger.warn("Ошибка при обновлении статуса игры ID {}: {}", game.getId(), e.getMessage());
+                    game.setStatus("unknown");
+                }
+            });
+            return games.stream()
+                    .map(game -> modelMapper.map(game, GameDTO.class)) // Маппинг в DTO
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error("Ошибка при получении списка игр: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 }
