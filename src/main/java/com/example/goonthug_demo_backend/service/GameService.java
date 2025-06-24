@@ -171,7 +171,7 @@ public class GameService {
                     .map(game -> modelMapper.map(game, GameDTO.class))
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            logger.error("Ошибка при получении списка игр: {}", e.getMessage(), e);
+            logger.error("Ошибкаа при получении списка игр: {}", e.getMessage(), e);
             throw e;
         }
     }
