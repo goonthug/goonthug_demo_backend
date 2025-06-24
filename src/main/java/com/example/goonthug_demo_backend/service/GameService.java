@@ -8,8 +8,8 @@ import com.example.goonthug_demo_backend.repository.CompanyRepository;
 import com.example.goonthug_demo_backend.repository.GameAssignmentRepository;
 import com.example.goonthug_demo_backend.repository.GameRepository;
 import com.example.goonthug_demo_backend.repository.UserRepository;
-import com.example.goonthug_demo_backend.dto.GameDTO; // Добавь импорт DTO
-import org.modelmapper.ModelMapper; // Добавь импорт ModelMapper
+import com.example.goonthug_demo_backend.dto.GameDTO;
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,24 +44,22 @@ public class GameService {
     private CompanyRepository companyRepository;
 
     @Autowired
-    private ModelMapper modelMapper; // Добавь поле для ModelMapper
+    private ModelMapper modelMapper;
 
-    // Новый метод для получения компании по имени пользователя
     public Company getCompanyByUsername(String username) {
-        System.out.println("Ищем пользователя с username: " + username); // Отладка
+        System.out.println("Ищем пользователя с username: " + username);
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
-        System.out.println("Найден пользователь: " + user.getUsername() + ", роль: " + user.getRole()); // Отладка
-        if (user.getRole() != User.Role.COMPANY) { // Сравнение с enum
+        System.out.println("Найден пользователь: " + user.getUsername() + ", роль: " + user.getRole());
+        if (user.getRole() != User.Role.COMPANY) {
             throw new IllegalArgumentException("Пользователь не является компанией");
         }
         Company company = companyRepository.findByUser(user)
                 .orElseThrow(() -> new IllegalArgumentException("Компания не найдена для пользователя"));
-        System.out.println("Найдена компания с ID: " + company.getId()); // Отладка
+        System.out.println("Найдена компания с ID: " + company.getId());
         return company;
     }
 
-    // Новый метод для сохранения игры
     public void save(Game game) {
         gameRepository.save(game);
     }
@@ -90,7 +88,7 @@ public class GameService {
         game.setFileName(uniqueFileName);
         game.setFileContent(file.getBytes());
         game.setCompany(company);
-        game.setStatus("available"); // Устанавливаем начальный статус
+        game.setStatus("available");
 
         logger.info("Сохранение игры в базу данных: {}", title);
         Game savedGame = gameRepository.save(game);
@@ -102,9 +100,10 @@ public class GameService {
     public void assignGame(Long gameId, String username) {
         logger.debug("Назначение игры с ID {} пользователю {}", gameId, username);
         User tester = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
+                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден: " + username));
+        logger.debug("Найден тестер: username={}, role={}", tester.getUsername(), tester.getRole());
 
-        if (!tester.getRole().equals("TESTER")) {
+        if (!User.Role.TESTER.equals(tester.getRole())) { // Используем enum
             throw new IllegalArgumentException("Только тестеры могут брать игры в работу");
         }
 
@@ -121,8 +120,8 @@ public class GameService {
         assignment.setStatus("в работе");
 
         gameAssignmentRepository.save(assignment);
-        game.setStatus("в работе"); // Обновляем статус игры
-        gameRepository.save(game); // Сохраняем обновлённый статус
+        game.setStatus("в работе");
+        gameRepository.save(game);
         logger.info("Игра с ID {} назначена тестеру {}", gameId, username);
     }
 
@@ -149,7 +148,7 @@ public class GameService {
         return game;
     }
 
-    public List<GameDTO> getAllGames() { // Измени тип возвращаемого значения на GameDTO
+    public List<GameDTO> getAllGames() {
         try {
             List<Game> games = gameRepository.findAllWithCompany();
             logger.info("Найдено игр в game_demo: {}", games.size());
@@ -169,7 +168,7 @@ public class GameService {
                 }
             });
             return games.stream()
-                    .map(game -> modelMapper.map(game, GameDTO.class)) // Маппинг в DTO
+                    .map(game -> modelMapper.map(game, GameDTO.class))
                     .collect(Collectors.toList());
         } catch (Exception e) {
             logger.error("Ошибка при получении списка игр: {}", e.getMessage(), e);
