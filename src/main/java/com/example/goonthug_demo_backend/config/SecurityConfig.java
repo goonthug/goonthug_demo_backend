@@ -35,19 +35,21 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Отключение CSRF
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/register", "/api/login", "/error", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/games/upload").hasRole("COMPANY")
                         .requestMatchers("/api/games/download/**").hasRole("TESTER")
+                        .requestMatchers("/api/user/profile").authenticated()
                         .requestMatchers("/api/games").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
+                // Убрана конфигурация oauth2ResourceServer, так как используется кастомный JWT
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())); // Настройка CORS
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()));
 
         return http.build();
     }

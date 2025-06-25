@@ -130,21 +130,22 @@ public class GameService {
         logger.debug("Скачивание игры с ID {} пользователем {}", gameId, username);
 
         User tester = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
+                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден: " + username));
+        logger.debug("Найден тестер: id={}, username={}, role={}", tester.getId(), tester.getUsername(), tester.getRole());
 
-        if (!tester.getRole().equals("TESTER")) {
-            throw new IllegalArgumentException("Только тестеры могут скачивать игры");
+        if (!"TESTER".equals(tester.getRole().name())) {
+            throw new IllegalArgumentException("Только тестеры могут скачивать игры. Текущая роль: " + tester.getRole());
         }
 
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new IllegalArgumentException("Игра с ID " + gameId + " не найдена"));
+        logger.debug("Найдена игра: id={}, status={}", game.getId(), game.getStatus());
 
-        boolean isAssigned = gameAssignmentRepository.existsByGameIdAndTesterIdAndStatus(
-                gameId, tester.getId(), "в работе");
-        if (!isAssigned) {
-            throw new IllegalArgumentException("Игра не назначена этому тестеру или не находится в работе");
+        if (game.getFileContent() == null) {
+            throw new IllegalArgumentException("Файл для игры с ID " + gameId + " не загружен");
         }
 
+        // Убрана проверка назначения
         return game;
     }
 
@@ -171,7 +172,7 @@ public class GameService {
                     .map(game -> modelMapper.map(game, GameDTO.class))
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            logger.error("Ошибкаа при получении списка игр: {}", e.getMessage(), e);
+            logger.error("Ошибка при получении списка игр: {}", e.getMessage(), e);
             throw e;
         }
     }

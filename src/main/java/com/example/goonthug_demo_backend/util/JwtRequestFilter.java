@@ -1,4 +1,3 @@
-// src/main/java/com/example/goonthug_demo_backend/util/JwtRequestFilter.java
 package com.example.goonthug_demo_backend.util;
 
 import org.slf4j.Logger;
@@ -40,14 +39,21 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         String username = null;
         String jwt = null;
 
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            jwt = authorizationHeader.substring(7);
-            try {
-                username = jwtUtil.extractUsername(jwt);
-                logger.info("JWT found, username: " + username);
-            } catch (Exception e) {
-                logger.error("Invalid JWT token: " + e.getMessage());
-            }
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            logger.warn("No valid Authorization header found");
+            filterChain.doFilter(request, response); // Продолжаем цепочку без аутентификации
+            return;
+        }
+
+        jwt = authorizationHeader.substring(7);
+        try {
+            username = jwtUtil.extractUsername(jwt);
+            String tokenRole = jwtUtil.extractRole(jwt);
+            logger.info("JWT found, username: {}, role: {}", username, tokenRole);
+        } catch (Exception e) {
+            logger.error("Invalid JWT token: {}", e.getMessage());
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token");
+            return;
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -58,16 +64,18 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                             userDetails, null, userDetails.getAuthorities());
                     authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                    logger.info("Authentication set for user: " + username);
+                    logger.info("Authentication set for user: {} with role: {}", username, userDetails.getAuthorities());
                 } else {
-                    logger.warn("Token validation failed for user: " + username);
+                    logger.warn("Token validation failed for user: {}", username);
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token");
+                    return;
                 }
             } catch (UsernameNotFoundException e) {
-                logger.error("User not found: " + username);
+                logger.error("User not found: {}", username);
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "User not found");
+                return;
             }
         }
 
-        logger.info("Passing request to next filter");
         filterChain.doFilter(request, response);
-    }
-}
+    } }

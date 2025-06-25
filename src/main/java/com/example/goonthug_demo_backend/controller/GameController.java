@@ -113,12 +113,24 @@ public class GameController {
         }
     }
 
-    @GetMapping("/../user/profile")
+    @GetMapping("/api/user/profile")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<User> getUserProfile(Principal principal) {
+        if (principal == null) {
+            logger.error("Principal is null, authentication failed");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        }
         logger.info("Пользователь {} запрашивает свой профиль", principal.getName());
-        User user = userRepository.findByUsername(principal.getName())
-                .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден: " + principal.getName()));
-        return ResponseEntity.ok(user);
-    }
-}
+        try {
+            User user = userRepository.findByUsername(principal.getName())
+                    .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден: " + principal.getName()));
+            logger.info("User found: username={}, role={}", user.getUsername(), user.getRole());
+            return ResponseEntity.ok(user);
+        } catch (UsernameNotFoundException e) {
+            logger.warn("Пользователь не найден: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        } catch (Exception e) {
+            logger.error("Ошибка при получении профиля: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }}
