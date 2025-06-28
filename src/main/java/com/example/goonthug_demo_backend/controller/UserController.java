@@ -5,6 +5,7 @@ import com.example.goonthug_demo_backend.model.User;
 import com.example.goonthug_demo_backend.repository.UserRepository;
 import com.example.goonthug_demo_backend.service.UserService;
 import com.example.goonthug_demo_backend.util.JwtUtil;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,19 +41,9 @@ public class UserController {
     private JwtUtil jwtUtil;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody Map<String, String> registrationData) {
+    public ResponseEntity<?> register(@Valid @RequestBody UserRegistrationDto registrationData) {
         try {
-            UserRegistrationDto dto = new UserRegistrationDto();
-            dto.setUsername(registrationData.get("username"));
-            dto.setPassword(registrationData.get("password"));
-            dto.setRole(registrationData.get("role"));
-            if ("COMPANY".equalsIgnoreCase(dto.getRole())) {
-                dto.setCompanyName(registrationData.get("companyName"));
-            } else {
-                dto.setFirstName(registrationData.get("firstName"));
-                dto.setLastName(registrationData.get("lastName"));
-            }
-            userService.registerUser(dto);
+            userService.registerUser(registrationData);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             logger.error("Registration failed: {}", e.getMessage());
@@ -104,4 +95,6 @@ public class UserController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("error", "Ошибка загрузки профиля: " + e.getMessage()));
-        }}}
+        }
+    }
+}

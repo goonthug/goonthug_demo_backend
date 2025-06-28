@@ -1,4 +1,3 @@
-// src/main/java/com/example/goonthug_demo_backend/service/UserService.java
 package com.example.goonthug_demo_backend.service;
 
 import com.example.goonthug_demo_backend.dto.UserRegistrationDto;
@@ -40,17 +39,25 @@ public class UserService {
         User user = new User();
         user.setUsername(dto.getUsername());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        // Преобразуем строку в перечисление User.Role
         user.setRole(User.Role.valueOf(dto.getRole().toUpperCase()));
         user = userRepository.save(user); // Сохраняем пользователя сразу
 
-        // Создаем связанные сущности
-        if ("COMPANY".equals(dto.getRole())) {
+        // Дополнительная валидация ролей
+        if ("COMPANY".equalsIgnoreCase(dto.getRole())) {
+            if (dto.getCompanyName() == null || dto.getCompanyName().trim().isEmpty()) {
+                throw new IllegalArgumentException("Название компании обязательно для роли COMPANY");
+            }
             Company company = new Company();
             company.setCompanyName(dto.getCompanyName());
             company.setUser(user);
             companyRepository.save(company);
-        } else if ("TESTER".equals(dto.getRole())) {
+        } else if ("TESTER".equalsIgnoreCase(dto.getRole())) {
+            if (dto.getFirstName() == null || dto.getFirstName().trim().isEmpty()) {
+                throw new IllegalArgumentException("Имя обязательно для роли TESTER");
+            }
+            if (dto.getLastName() == null || dto.getLastName().trim().isEmpty()) {
+                throw new IllegalArgumentException("Фамилия обязательна для роли TESTER");
+            }
             Tester tester = new Tester();
             tester.setUser(user);
             tester.setFirstName(dto.getFirstName());
