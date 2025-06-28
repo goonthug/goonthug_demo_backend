@@ -24,8 +24,6 @@ public class GameDemo {
     @JoinColumn(name = "company_id")
     private User company;
 
-    private Double minTesterRating;
-    private Boolean requiresManualSelection;
 
     // Геттеры и сеттеры
     public Long getId() {
@@ -68,19 +66,4 @@ public class GameDemo {
         this.company = company;
     }
 
-    public Double getMinTesterRating() {
-        return minTesterRating;
-    }
-
-    public void setMinTesterRating(Double minTesterRating) {
-        this.minTesterRating = minTesterRating;
-    }
-
-    public Boolean getRequiresManualSelection() {
-        return requiresManualSelection;
-    }
-
-    public void setRequiresManualSelection(Boolean requiresManualSelection) {
-        this.requiresManualSelection = requiresManualSelection;
-    }
 }

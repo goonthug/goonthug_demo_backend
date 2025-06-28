@@ -17,12 +17,6 @@ public class Game {
     @Column(name = "file_name")
     private String fileName;
 
-    @Column(name = "min_tester_rating")
-    private Integer minTesterRating;
-
-    @Column(name = "requires_manual_selection")
-    private Boolean requiresManualSelection;
-
     @Column(name = "status")
     private String status;
 
@@ -41,10 +35,6 @@ public class Game {
     public void setFileContent(byte[] fileContent) { this.fileContent = fileContent; }
     public String getFileName() { return fileName; }
     public void setFileName(String fileName) { this.fileName = fileName; }
-    public Integer getMinTesterRating() { return minTesterRating; }
-    public void setMinTesterRating(Integer minTesterRating) { this.minTesterRating = minTesterRating; }
-    public Boolean getRequiresManualSelection() { return requiresManualSelection; }
-    public void setRequiresManualSelection(Boolean requiresManualSelection) { this.requiresManualSelection = requiresManualSelection; }
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
     public String getStatus() { return status; }
@@ -58,8 +48,6 @@ public class Game {
                 "id=" + id +
                 ", title='" + title + '\'' +
                 ", fileName='" + fileName + '\'' +
-                ", minTesterRating=" + minTesterRating +
-                ", requiresManualSelection=" + requiresManualSelection +
                 ", status='" + status + '\'' +
                 ", companyId=" + (company != null ? company.getId() : null) +
                 '}';

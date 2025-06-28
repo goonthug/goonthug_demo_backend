@@ -55,8 +55,6 @@ public class GameController {
     @PreAuthorize("hasRole('COMPANY')")
     public ResponseEntity<?> uploadGame(@RequestParam("file") MultipartFile file,
                                         @RequestParam("title") String title,
-                                        @RequestParam("minTesterRating") Integer minTesterRating,
-                                        @RequestParam("requiresManualSelection") Boolean requiresManualSelection,
                                         Principal principal) {
         logger.info("Пользователь {} пытается загрузить игру: {}", principal.getName(), title);
         try {
@@ -64,8 +62,6 @@ public class GameController {
             game.setFileContent(file.getBytes());
             game.setFileName(file.getOriginalFilename());
             game.setTitle(title);
-            game.setMinTesterRating(minTesterRating);
-            game.setRequiresManualSelection(requiresManualSelection);
             game.setStatus("available");
             game.setCompany(gameService.getCompanyByUsername(principal.getName()));
             gameService.save(game);

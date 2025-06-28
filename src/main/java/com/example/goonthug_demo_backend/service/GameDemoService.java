@@ -43,8 +43,7 @@ public class GameDemoService {
         gameDemo.setFileName(file.getOriginalFilename()); // Сохраняем имя файла
         gameDemo.setFileContent(file.getBytes()); // Сохраняем содержимое файла
         gameDemo.setCompany(company);
-        gameDemo.setMinTesterRating(minTesterRating);
-        gameDemo.setRequiresManualSelection(requiresManualSelection);
+
 
         return gameDemoRepository.save(gameDemo);
     }
