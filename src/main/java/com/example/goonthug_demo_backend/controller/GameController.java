@@ -58,13 +58,7 @@ public class GameController {
                                         Principal principal) {
         logger.info("Пользователь {} пытается загрузить игру: {}", principal.getName(), title);
         try {
-            Game game = new Game();
-            game.setFileContent(file.getBytes());
-            game.setFileName(file.getOriginalFilename());
-            game.setTitle(title);
-            game.setStatus("available");
-            game.setCompany(gameService.getCompanyByUsername(principal.getName()));
-            gameService.save(game);
+            gameService.uploadGame(file, title, principal.getName());
             logger.info("Игра {} успешно загружена пользователем {}", title, principal.getName());
             return ResponseEntity.ok("Игра успешно загружена");
         } catch (IOException e) {
@@ -109,7 +103,7 @@ public class GameController {
         }
     }
 
-    @GetMapping("/api/user/profile")
+    @GetMapping("/user/profile")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<User> getUserProfile(Principal principal) {
         if (principal == null) {
@@ -118,9 +112,9 @@ public class GameController {
         }
         logger.info("Пользователь {} запрашивает свой профиль", principal.getName());
         try {
-            User user = userRepository.findByUsername(principal.getName())
-                    .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден: " + principal.getName()));
-            logger.info("User found: username={}, role={}", user.getUsername(), user.getRole());
+            User user = userRepository.findByEmail(principal.getName())
+                    .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден с email: " + principal.getName()));
+            logger.info("User found: email={}, role={}", user.getEmail(), user.getRole());
             return ResponseEntity.ok(user);
         } catch (UsernameNotFoundException e) {
             logger.warn("Пользователь не найден: {}", e.getMessage());
@@ -129,4 +123,5 @@ public class GameController {
             logger.error("Ошибка при получении профиля: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
-    }}
+    }
+}

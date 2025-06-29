@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+
 @Service
 public class GameDemoService {
     private final GameDemoRepository gameDemoRepository;
@@ -34,16 +35,15 @@ public class GameDemoService {
 
     public GameDemo uploadGameDemo(MultipartFile file, String title,
                                    Double minTesterRating, Boolean requiresManualSelection) throws IOException {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User company = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User company = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found: " + email));
 
         GameDemo gameDemo = new GameDemo();
         gameDemo.setTitle(title);
         gameDemo.setFileName(file.getOriginalFilename()); // Сохраняем имя файла
         gameDemo.setFileContent(file.getBytes()); // Сохраняем содержимое файла
         gameDemo.setCompany(company);
-
 
         return gameDemoRepository.save(gameDemo);
     }

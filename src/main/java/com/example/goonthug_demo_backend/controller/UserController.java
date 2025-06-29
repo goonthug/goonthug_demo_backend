@@ -1,6 +1,7 @@
 package com.example.goonthug_demo_backend.controller;
 
 import com.example.goonthug_demo_backend.dto.UserRegistrationDto;
+import com.example.goonthug_demo_backend.dto.UserLoginDto;
 import com.example.goonthug_demo_backend.model.User;
 import com.example.goonthug_demo_backend.repository.UserRepository;
 import com.example.goonthug_demo_backend.service.UserService;
@@ -15,7 +16,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -52,18 +53,18 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> loginData) {
+    public ResponseEntity<?> login(@Valid @RequestBody UserLoginDto loginData) {
         try {
-            String username = loginData.get("username");
-            String password = loginData.get("password");
+            String email = loginData.getEmail();
+            String password = loginData.getPassword();
 
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(username, password)
+                    new UsernamePasswordAuthenticationToken(email, password)
             );
             String role = ((org.springframework.security.core.userdetails.User) authentication.getPrincipal()).getAuthorities()
                     .iterator().next().getAuthority().replace("ROLE_", "");
-            String token = jwtUtil.generateToken(username, role);
-            logger.info("Login successful for user: {}, token generated", username);
+            String token = jwtUtil.generateToken(email, role);
+            logger.info("Login successful for user: {}, token generated", email);
             return ResponseEntity.ok(Map.of("token", token));
         } catch (Exception e) {
             logger.error("Login failed: {}", e.getMessage());
@@ -72,25 +73,30 @@ public class UserController {
     }
 
     @GetMapping("/user/profile")
+    @Transactional(readOnly = true) // Добавляем транзакцию для чтения
     public ResponseEntity<Map<String, Object>> getProfile(@AuthenticationPrincipal UserDetails userDetails) {
         try {
             if (userDetails == null) {
                 return ResponseEntity.status(401).body(Map.of("error", "No authenticated user"));
             }
 
-            String username = userDetails.getUsername();
-            User user = userRepository.findByUsername(username)
+            String email = userDetails.getUsername();
+            User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
+            // Коллекции tests и ratedGames будут загружены благодаря @Transactional
             Map<String, Object> response = new HashMap<>();
-            response.put("username", user.getUsername());
+            response.put("email", user.getEmail());
             response.put("role", user.getRole().toString());
-
-            if (user.getRole() == User.Role.TESTER) {
-                response.put("tests", user.getTests());
-            } else if (user.getRole() == User.Role.COMPANY) {
-                response.put("ratedGames", user.getRatedGames());
+            if (user.getTester() != null) {
+                response.put("firstName", user.getTester().getFirstName());
+                response.put("lastName", user.getTester().getLastName());
             }
+            if (user.getCompany() != null) {
+                response.put("companyName", user.getCompany().getCompanyName());
+            }
+            response.put("tests", user.getTests()); // Теперь безопасно
+            response.put("ratedGames", user.getRatedGames()); // Теперь безопасно
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {

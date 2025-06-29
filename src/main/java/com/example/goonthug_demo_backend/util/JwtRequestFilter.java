@@ -36,7 +36,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         logger.info("Processing request: {}", request.getRequestURI());
 
         final String authorizationHeader = request.getHeader("Authorization");
-        String username = null;
+        String email = null;
         String jwt = null;
 
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
@@ -47,31 +47,31 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
         jwt = authorizationHeader.substring(7);
         try {
-            username = jwtUtil.extractUsername(jwt);
+            email = jwtUtil.extractUsername(jwt);
             String tokenRole = jwtUtil.extractRole(jwt);
-            logger.info("Extracted username: {}, role: {} from JWT", username, tokenRole);
+            logger.info("Extracted username: {}, role: {} from JWT", email, tokenRole);
         } catch (Exception e) {
             logger.error("Invalid JWT token: {}", e.getMessage());
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or malformed token");
             return;
         }
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
-                UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(email);
                 if (userDetails != null && jwtUtil.validateToken(jwt, userDetails.getUsername())) {
                     UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                             userDetails, null, userDetails.getAuthorities());
                     authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                    logger.info("Successfully authenticated user: {}, authorities: {}", username, userDetails.getAuthorities());
+                    logger.info("Successfully authenticated user: {}, authorities: {}", email, userDetails.getAuthorities());
                 } else {
-                    logger.warn("Token validation failed for user: {}, token: {}", username, jwt);
+                    logger.warn("Token validation failed for user: {}, token: {}", email, jwt);
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token validation failed");
                     return;
                 }
             } catch (UsernameNotFoundException e) {
-                logger.error("User not found: {}", username);
+                logger.error("User not found: {}", email);
                 response.sendError(HttpServletResponse.SC_NOT_FOUND, "User not found");
                 return;
             } catch (Exception e) {

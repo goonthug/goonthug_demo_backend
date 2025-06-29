@@ -19,19 +19,18 @@ public class UserDetailsServiceImpl implements org.springframework.security.core
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
-        System.out.println("Found user: " + user.getUsername() + ", role: " + user.getRole() + ", role name: " + user.getRole().name()); // Расширенная отладка
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+        System.out.println("Found user: " + user.getEmail() + ", role: " + user.getRole() + ", role name: " + user.getRole().name());
 
-        // Преобразование роли в формат ROLE_*
-        String role = "ROLE_" + user.getRole().name(); // Используем name() для enum
+        String role = "ROLE_" + user.getRole().name();
         SimpleGrantedAuthority authority = new SimpleGrantedAuthority(role);
-        System.out.println("Assigned authority: " + authority.getAuthority()); // Отладка
+        System.out.println("Assigned authority: " + authority.getAuthority());
         return new org.springframework.security.core.userdetails.User(
-                user.getUsername(),
+                user.getEmail(),
                 user.getPassword(),
-                Collections.singletonList(authority) // Список ролей
+                Collections.singletonList(authority)
         );
     }
 }

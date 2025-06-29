@@ -31,18 +31,17 @@ public class UserService {
 
     @Transactional
     public void registerUser(UserRegistrationDto dto) {
-        System.out.println("Starting registration for: " + dto.getUsername());
-        if (userRepository.findByUsername(dto.getUsername()).isPresent()) {
-            throw new IllegalArgumentException("Username already exists");
+        System.out.println("Starting registration for: " + dto.getEmail());
+        if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email already exists");
         }
 
         User user = new User();
-        user.setUsername(dto.getUsername());
+        user.setEmail(dto.getEmail());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setRole(User.Role.valueOf(dto.getRole().toUpperCase()));
-        user = userRepository.save(user); // Сохраняем пользователя сразу
+        user = userRepository.save(user);
 
-        // Дополнительная валидация ролей
         if ("COMPANY".equalsIgnoreCase(dto.getRole())) {
             if (dto.getCompanyName() == null || dto.getCompanyName().trim().isEmpty()) {
                 throw new IllegalArgumentException("Название компании обязательно для роли COMPANY");
@@ -50,6 +49,7 @@ public class UserService {
             Company company = new Company();
             company.setCompanyName(dto.getCompanyName());
             company.setUser(user);
+            user.setCompany(company);
             companyRepository.save(company);
         } else if ("TESTER".equalsIgnoreCase(dto.getRole())) {
             if (dto.getFirstName() == null || dto.getFirstName().trim().isEmpty()) {
@@ -62,6 +62,7 @@ public class UserService {
             tester.setUser(user);
             tester.setFirstName(dto.getFirstName());
             tester.setLastName(dto.getLastName());
+            user.setTester(tester);
             testerRepository.save(tester);
         }
     }

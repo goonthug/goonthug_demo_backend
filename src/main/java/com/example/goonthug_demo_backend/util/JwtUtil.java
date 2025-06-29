@@ -45,10 +45,10 @@ public class JwtUtil {
         logger.debug("Initialized signingKey with length: {} bits", signingKey.getEncoded().length * 8);
     }
 
-    public String generateToken(String username, String role) {
+    public String generateToken(String email, String role) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
-        return createToken(claims, username);
+        return createToken(claims, email);
     }
 
     private String createToken(Map<String, Object> claims, String subject) {
@@ -71,10 +71,11 @@ public class JwtUtil {
 
     private Claims extractAllClaims(String token) {
         try {
-            io.jsonwebtoken.JwtParser parser = Jwts.parserBuilder()
+            return Jwts.parserBuilder()
                     .setSigningKey(signingKey)
-                    .build();
-            return parser.parseClaimsJws(token).getBody();
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
         } catch (ExpiredJwtException e) {
             logger.error("Token expired: {}", e.getMessage());
             throw e;
@@ -90,11 +91,11 @@ public class JwtUtil {
         }
     }
 
-    public boolean validateToken(String token, String username) {
+    public boolean validateToken(String token, String email) {
         try {
             Claims claims = extractAllClaims(token);
-            boolean isValid = claims.getSubject().equals(username) && !isTokenExpired(token);
-            logger.debug("Token validation for username {}: {}", username, isValid);
+            boolean isValid = claims.getSubject().equals(email) && !isTokenExpired(token);
+            logger.debug("Token validation for email {}: {}", email, isValid);
             return isValid;
         } catch (Exception e) {
             logger.error("Token validation failed: {}", e.getMessage());
@@ -105,10 +106,7 @@ public class JwtUtil {
     private boolean isTokenExpired(String token) {
         try {
             Date expirationDate = extractAllClaims(token).getExpiration();
-            boolean expired = expirationDate.before(new Date());
-            logger.debug("Token expiration check: expiration={}, current={}, expired={}",
-                    expirationDate, new Date(), expired);
-            return expired;
+            return expirationDate.before(new Date());
         } catch (ExpiredJwtException e) {
             logger.error("Token expired: {}", e.getMessage());
             return true;

@@ -10,9 +10,28 @@ SELECT * FROM game_assignments;
 SELECT * FROM games;
 SELECT * FROM game_assignments;
 
+DROP TABLE users;
+DELETE FROM public.users WHERE company_name IS NOT NULL OR first_name IS NOT NULL OR last_name IS NOT NULL OR username IS NOT NULL;
+SELECT * FROM public.users;
+SELECT * FROM public.tester;
+
+SELECT COUNT(*) FROM public.users WHERE company_name IS NOT NULL OR first_name IS NOT NULL OR last_name IS NOT NULL OR username IS NOT NULL;
 
 SELECT * FROM information_schema.tables
 WHERE table_name = 'game_demo';
+
+SELECT column_name
+FROM information_schema.columns
+WHERE table_name = 'users'
+AND column_name = 'email';
+
+
+ALTER TABLE users ADD COLUMN email VARCHAR(255) UNIQUE NOT NULL;
+
+ALTER TABLE public.users DROP COLUMN company_name;
+ALTER TABLE public.users DROP COLUMN first_name;
+ALTER TABLE public.users DROP COLUMN last_name;
+ALTER TABLE public.users DROP COLUMN username;
 
 SELECT column_name, data_type
 FROM information_schema.columns
@@ -79,3 +98,36 @@ SELECT column_name, data_type
 FROM information_schema.columns
 WHERE table_name = 'testers';
 
+SELECT * FROM users WHERE email IS NULL;
+SELECT * FROM users WHERE email IS NULL;
+INSERT INTO users (email, password, role) VALUES ('test@example.com', '$2a$10$...hashed_password...', 'TESTER');
+-- Добавить колонку email, позволяющую NULL значения на начальном этапе
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255);
+
+ALTER TABLE users ADD CONSTRAINT unique_email UNIQUE (email);
+ALTER TABLE users ALTER COLUMN email SET NOT NULL;
+
+
+SELECT * FROM public.users;
+
+
+INSERT INTO users (company_name, first_name, last_name, password, role, username, email)
+VALUES ('TestCompany', 'John', 'Doe', '$2a$10$...encoded_password...', 'TESTER', 'johndoe', 'john.doe@example.com');
+
+BEGIN;
+INSERT INTO users (company_name, first_name, last_name, password, role, username, email)
+VALUES ('TestCompany', 'John', 'Doe', '$2a$10$...encoded_password...', 'TESTER', 'johndoe', 'john.doe@example.com');
+COMMIT;
+
+SELECT current_schema();
+
+-- Обновить существующие строки с значением по умолчанию или существующим значением (настройте в зависимости от ваших данных)
+UPDATE users SET email = 'default@example.com' WHERE email IS NULL;
+-- ИЛИ, если есть username и его можно использовать как email:
+-- UPDATE users SET email = username WHERE email IS NULL;
+
+-- Добавить ограничение NOT NULL
+ALTER TABLE users ALTER COLUMN email SET NOT NULL;
+
+-- Добавить уникальное ограничение (если нужно)
+ALTER TABLE users ADD CONSTRAINT UK_6dotkott2kjsp8vw4d0m25fb7 UNIQUE (email);

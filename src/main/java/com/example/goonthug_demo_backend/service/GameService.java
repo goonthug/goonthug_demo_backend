@@ -46,11 +46,11 @@ public class GameService {
     @Autowired
     private ModelMapper modelMapper;
 
-    public Company getCompanyByUsername(String username) {
-        System.out.println("Ищем пользователя с username: " + username);
-        User user = userRepository.findByUsername(username)
+    public Company getCompanyByEmail(String email) {
+        System.out.println("Ищем пользователя с email: " + email);
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
-        System.out.println("Найден пользователь: " + user.getUsername() + ", роль: " + user.getRole());
+        System.out.println("Найден пользователь: " + user.getEmail() + ", роль: " + user.getRole());
         if (user.getRole() != User.Role.COMPANY) {
             throw new IllegalArgumentException("Пользователь не является компанией");
         }
@@ -65,12 +65,12 @@ public class GameService {
     }
 
     @Transactional
-    public Game uploadGame(MultipartFile file, String title, String username) throws IOException {
-        logger.debug("Поиск компании с username: {}", username);
-        User companyUser = userRepository.findByUsername(username)
+    public Game uploadGame(MultipartFile file, String title, String email) throws IOException {
+        logger.debug("Поиск компании с email: {}", email);
+        User companyUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Компания не найдена"));
 
-        if (!companyUser.getRole().equals("COMPANY")) {
+        if (!companyUser.getRole().equals(User.Role.COMPANY)) {
             throw new IllegalArgumentException("Только компании могут загружать игры");
         }
 
@@ -97,13 +97,13 @@ public class GameService {
     }
 
     @Transactional
-    public void assignGame(Long gameId, String username) {
-        logger.debug("Назначение игры с ID {} пользователю {}", gameId, username);
-        User tester = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден: " + username));
-        logger.debug("Найден тестер: username={}, role={}", tester.getUsername(), tester.getRole());
+    public void assignGame(Long gameId, String email) {
+        logger.debug("Назначение игры с ID {} пользователю с email {}", gameId, email);
+        User tester = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден: " + email));
+        logger.debug("Найден тестер: email={}, role={}", tester.getEmail(), tester.getRole());
 
-        if (!User.Role.TESTER.equals(tester.getRole())) { // Используем enum
+        if (!User.Role.TESTER.equals(tester.getRole())) {
             throw new IllegalArgumentException("Только тестеры могут брать игры в работу");
         }
 
@@ -122,16 +122,16 @@ public class GameService {
         gameAssignmentRepository.save(assignment);
         game.setStatus("в работе");
         gameRepository.save(game);
-        logger.info("Игра с ID {} назначена тестеру {}", gameId, username);
+        logger.info("Игра с ID {} назначена тестеру с email {}", gameId, email);
     }
 
     @Transactional
-    public Game downloadGame(Long gameId, String username) {
-        logger.debug("Скачивание игры с ID {} пользователем {}", gameId, username);
+    public Game downloadGame(Long gameId, String email) {
+        logger.debug("Скачивание игры с ID {} пользователем с email {}", gameId, email);
 
-        User tester = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден: " + username));
-        logger.debug("Найден тестер: id={}, username={}, role={}", tester.getId(), tester.getUsername(), tester.getRole());
+        User tester = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден: " + email));
+        logger.debug("Найден тестер: id={}, email={}, role={}", tester.getId(), tester.getEmail(), tester.getRole());
 
         if (!"TESTER".equals(tester.getRole().name())) {
             throw new IllegalArgumentException("Только тестеры могут скачивать игры. Текущая роль: " + tester.getRole());
@@ -145,7 +145,6 @@ public class GameService {
             throw new IllegalArgumentException("Файл для игры с ID " + gameId + " не загружен");
         }
 
-        // Убрана проверка назначения
         return game;
     }
 

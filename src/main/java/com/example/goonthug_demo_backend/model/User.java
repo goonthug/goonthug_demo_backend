@@ -1,4 +1,3 @@
-// src/main/java/com/example/goonthug_demo_backend/model/User.java
 package com.example.goonthug_demo_backend.model;
 
 import jakarta.persistence.*;
@@ -13,19 +12,21 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
-    private String username;
+    @Column(name = "email", unique = true, nullable = false)
+    private String email;
 
     @Column(nullable = false)
-    private String password; // Хранится в хешированном виде
+    private String password;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    private String firstName; // Для тестера
-    private String lastName; // Для тестера
-    private String companyName; // Для компании
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Tester tester;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Company company;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Test> tests = new ArrayList<>();
@@ -33,28 +34,23 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RatedGame> ratedGames = new ArrayList<>();
 
-    // Геттеры, сеттеры, конструкторы
     public enum Role {
         TESTER, COMPANY
     }
 
-    // Убери вложенные классы Test и RatedGame, так как они теперь отдельные сущности
-
     // Геттеры и сеттеры
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
     public Role getRole() { return role; }
     public void setRole(Role role) { this.role = role; }
-    public String getFirstName() { return firstName; }
-    public void setFirstName(String firstName) { this.firstName = firstName; }
-    public String getLastName() { return lastName; }
-    public void setLastName(String lastName) { this.lastName = lastName; }
-    public String getCompanyName() { return companyName; }
-    public void setCompanyName(String companyName) { this.companyName = companyName; }
+    public Tester getTester() { return tester; }
+    public void setTester(Tester tester) { this.tester = tester; }
+    public Company getCompany() { return company; }
+    public void setCompany(Company company) { this.company = company; }
     public List<Test> getTests() { return tests; }
     public void setTests(List<Test> tests) { this.tests = tests; }
     public List<RatedGame> getRatedGames() { return ratedGames; }
