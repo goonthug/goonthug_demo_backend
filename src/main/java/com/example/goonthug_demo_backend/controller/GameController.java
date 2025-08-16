@@ -2,126 +2,131 @@ package com.example.goonthug_demo_backend.controller;
 
 import com.example.goonthug_demo_backend.dto.GameDTO;
 import com.example.goonthug_demo_backend.model.Game;
-import com.example.goonthug_demo_backend.model.User;
-import com.example.goonthug_demo_backend.repository.UserRepository;
 import com.example.goonthug_demo_backend.service.GameService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.security.Principal;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/games")
+@CrossOrigin(origins = "http://localhost:5175", allowedHeaders = "*")
 public class GameController {
 
     private static final Logger logger = LoggerFactory.getLogger(GameController.class);
     private final GameService gameService;
-    private final UserRepository userRepository;
 
-    @Autowired
-    public GameController(GameService gameService, UserRepository userRepository) {
+    public GameController(GameService gameService) {
         this.gameService = gameService;
-        this.userRepository = userRepository;
     }
 
-    @PostMapping("/{id}/assign")
-    @PreAuthorize("hasRole('TESTER')")
-    public ResponseEntity<String> assignGameToTester(@PathVariable Long id, Principal principal) {
-        logger.info("Тестер {} пытается взять игру с id {}", principal.getName(), id);
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('COMPANY')")
+    @Operation(summary = "Загрузить игру", description = "Загружает новую игру (только для компаний)")
+    @SecurityRequirement(name = "Bearer Authentication")
+    public ResponseEntity<?> uploadGame(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("title") String title,
+            @RequestParam(value = "status", required = false, defaultValue = "доступна") String status) {
         try {
-            gameService.assignGame(id, principal.getName());
-            logger.info("Игра с id {} успешно взята тестером {}", id, principal.getName());
-            return ResponseEntity.ok("Игра успешно взята в работу!");
-        } catch (IllegalArgumentException e) {
-            logger.warn("Ошибка при взятии игры: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            logger.info("Загрузка игры: {}", title);
+            Game game = gameService.uploadGame(file, title, status);
+            logger.info("Игра успешно загружена с id: {}", game.getId());
+            return ResponseEntity.ok(game);
         } catch (Exception e) {
-            logger.error("Внутренняя ошибка при взятии игры: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Внутренняя ошибка сервера: " + e.getMessage());
+            logger.error("Ошибка при загрузке игры: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Ошибка при загрузке игры: " + e.getMessage());
         }
     }
 
-    @PostMapping("/upload")
-    @PreAuthorize("hasRole('COMPANY')")
-    public ResponseEntity<?> uploadGame(@RequestParam("file") MultipartFile file,
-                                        @RequestParam("title") String title,
-                                        Principal principal) {
-        logger.info("Пользователь {} пытается загрузить игру: {}", principal.getName(), title);
+    @GetMapping
+    @Operation(summary = "Получить список игр", description = "Возвращает список всех игр")
+    @SecurityRequirement(name = "Bearer Authentication")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Список игр получен успешно"),
+            @ApiResponse(responseCode = "401", description = "Не авторизован")
+    })
+    public ResponseEntity<List<GameDTO>> getAllGames() {
         try {
-            gameService.uploadGame(file, title, principal.getName());
-            logger.info("Игра {} успешно загружена пользователем {}", title, principal.getName());
-            return ResponseEntity.ok("Игра успешно загружена");
-        } catch (IOException e) {
-            logger.error("Ошибка при загрузке файла: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ошибка при загрузке файла: " + e.getMessage());
+            logger.info("Получение всех игр");
+            List<GameDTO> games = gameService.getAllGames();
+            logger.info("Найдено игр: {}", games.size());
+            return ResponseEntity.ok(games);
+        } catch (Exception e) {
+            logger.error("Ошибка при получении игр: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
     @GetMapping("/download/{id}")
     @PreAuthorize("hasRole('TESTER')")
-    public ResponseEntity<?> downloadGame(@PathVariable Long id, Principal principal) {
-        if (id <= 0) {
-            logger.warn("Некорректный gameId: {}", id);
-            return ResponseEntity.badRequest().body("ID игры должен быть положительным");
-        }
-        logger.info("Тестер {} пытается скачать игру с id {}", principal.getName(), id);
+    @Operation(summary = "Скачать игру", description = "Скачивает игру и создает назначение (только для тестеров)")
+    @SecurityRequirement(name = "Bearer Authentication")
+    public ResponseEntity<?> downloadGame(@PathVariable Long id) {
         try {
-            Game game = gameService.downloadGame(id, principal.getName());
-            logger.info("Игра с id {} успешно скачана тестером {}", id, principal.getName());
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .header("Content-Disposition", "attachment; filename=\"" + game.getFileName() + "\"")
-                    .body(game.getFileContent());
-        } catch (IllegalArgumentException e) {
-            logger.warn("Ошибка при скачивании игры: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            logger.info("Тестер пытается скачать игру с id: {}", id);
+            ResponseEntity<Resource> response = gameService.downloadGame(id);
+            logger.info("Игра успешно скачана для id: {}", id);
+            return response;
+        } catch (RuntimeException e) {
+            logger.error("Ошибка при скачивании игры {}: {}", id, e.getMessage());
+            return ResponseEntity.badRequest().body("Ошибка при скачивании игры: " + e.getMessage());
         } catch (Exception e) {
-            logger.error("Внутренняя ошибка при скачивании игры: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Внутренняя ошибка сервера: " + e.getMessage());
+            logger.error("Неожиданная ошибка при скачивании игры {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Внутренняя ошибка сервера: " + e.getMessage());
         }
     }
 
-    @GetMapping
-    public ResponseEntity<List<GameDTO>> getAllGames() {
+    @GetMapping("/{id}")
+    @Operation(summary = "Получить игру по ID", description = "Возвращает информацию об игре по ID")
+    @SecurityRequirement(name = "Bearer Authentication")
+    public ResponseEntity<?> getGameById(@PathVariable Long id) {
         try {
-            List<GameDTO> games = gameService.getAllGames();
-            logger.info("Fetched games: {}", games);
-            return ResponseEntity.ok(games);
+            logger.info("Получение игры с id: {}", id);
+            Game game = gameService.getGameById(id);
+            return ResponseEntity.ok(game);
+        } catch (RuntimeException e) {
+            logger.error("Игра не найдена с id {}: {}", id, e.getMessage());
+            return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            logger.error("Ошибка при получении списка игр: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            logger.error("Ошибка при получении игры {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Ошибка при получении игры: " + e.getMessage());
         }
     }
 
-    @GetMapping("/user/profile")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<User> getUserProfile(Principal principal) {
-        if (principal == null) {
-            logger.error("Principal is null, authentication failed");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
-        }
-        logger.info("Пользователь {} запрашивает свой профиль", principal.getName());
+    @PostMapping("/{id}/complete")
+    @PreAuthorize("hasRole('TESTER')")
+    @Operation(summary = "Завершить тестирование", description = "Завершает тестирование игры и оставляет оценку")
+    @SecurityRequirement(name = "Bearer Authentication")
+    public ResponseEntity<?> completeGameTesting(
+            @PathVariable Long id,
+            @RequestParam double rating,
+            @RequestParam(required = false) String feedback) {
         try {
-            User user = userRepository.findByEmail(principal.getName())
-                    .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден с email: " + principal.getName()));
-            logger.info("User found: email={}, role={}", user.getEmail(), user.getRole());
-            return ResponseEntity.ok(user);
-        } catch (UsernameNotFoundException e) {
-            logger.warn("Пользователь не найден: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            logger.info("Завершение тестирования игры для id: {} с оценкой: {}", id, rating);
+            gameService.completeGameTesting(id, rating, feedback);
+            return ResponseEntity.ok("Тестирование завершено успешно");
+        } catch (RuntimeException e) {
+            logger.error("Ошибка при завершении тестирования игры {}: {}", id, e.getMessage());
+            return ResponseEntity.badRequest().body("Ошибка при завершении тестирования: " + e.getMessage());
         } catch (Exception e) {
-            logger.error("Ошибка при получении профиля: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            logger.error("Неожиданная ошибка при завершении тестирования игры {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Внутренняя ошибка сервера: " + e.getMessage());
         }
     }
 }
