@@ -25,13 +25,11 @@ public class GameAssignment {
     @Column(name = "assigned_at")
     private LocalDateTime assignedAt;
 
-    // Конструкторы
     public GameAssignment() {
         this.status = "в работе"; // Значение по умолчанию
         this.assignedAt = LocalDateTime.now(); // Текущее время по умолчанию
     }
 
-    // Геттеры и сеттеры
     public Long getId() {
         return id;
     }

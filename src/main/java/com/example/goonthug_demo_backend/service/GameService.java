@@ -5,7 +5,6 @@ import com.example.goonthug_demo_backend.model.Company;
 import com.example.goonthug_demo_backend.model.Game;
 import com.example.goonthug_demo_backend.model.GameAssignment;
 import com.example.goonthug_demo_backend.model.User;
-import com.example.goonthug_demo_backend.repository.CompanyRepository;
 import com.example.goonthug_demo_backend.repository.GameAssignmentRepository;
 import com.example.goonthug_demo_backend.repository.GameRepository;
 import com.example.goonthug_demo_backend.repository.UserRepository;
@@ -28,29 +27,28 @@ public class GameService {
 
     private final GameRepository gameRepository;
     private final UserRepository userRepository;
-    private final CompanyRepository companyRepository;
     private final GameAssignmentRepository gameAssignmentRepository;
+    private final UserService userService;
     private final ModelMapper modelMapper;
 
     public GameService(GameRepository gameRepository,
                        UserRepository userRepository,
-                       CompanyRepository companyRepository,
                        GameAssignmentRepository gameAssignmentRepository,
+                       UserService userService,
                        ModelMapper modelMapper) {
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
-        this.companyRepository = companyRepository;
         this.gameAssignmentRepository = gameAssignmentRepository;
+        this.userService = userService;
         this.modelMapper = modelMapper;
     }
 
     public Game uploadGame(MultipartFile file, String title, String status) throws IOException {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден: " + email));
+                .orElseThrow(() -> new RuntimeException("User not found: " + email));
 
-        Company company = companyRepository.findByUser(user)
-                .orElseThrow(() -> new RuntimeException("Не найдена компания для пользователя: " + email));
+        Company company = userService.findCompanyByUser(user);
 
         Game game = new Game();
         game.setTitle(title);
@@ -72,28 +70,32 @@ public class GameService {
     public ResponseEntity<Resource> downloadGame(Long gameId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User tester = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Тестер не найден: " + email));
+                .orElseThrow(() -> new RuntimeException("Tester not found: " + email));
 
         Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new RuntimeException("Не найдена игра с ID: " + gameId));
+                .orElseThrow(() -> new RuntimeException("Game not found with id: " + gameId));
 
+        // Проверяем, что игра доступна
         if (!"доступна".equals(game.getStatus())) {
-            throw new RuntimeException("Демо недоступно для скачивания");
+            throw new RuntimeException("Game is not available for download");
         }
 
+        // Проверяем только то, что конкретный тестер еще не взял эту игру
         boolean alreadyAssignedToThisTester = gameAssignmentRepository
                 .existsByGameIdAndTesterIdAndStatus(gameId, tester.getId(), "в работе");
 
         if (alreadyAssignedToThisTester) {
-            throw new RuntimeException("Вы уже взяли эту игру для тестирования");
+            throw new RuntimeException("You have already taken this game");
         }
 
+        // Создаем новое назначение для этого тестера
         GameAssignment assignment = new GameAssignment();
         assignment.setGame(game);
         assignment.setTester(tester);
         assignment.setStatus("в работе");
         gameAssignmentRepository.save(assignment);
 
+        // Возвращаем файл
         ByteArrayResource resource = new ByteArrayResource(game.getFileContent());
 
         return ResponseEntity.ok()
@@ -105,19 +107,24 @@ public class GameService {
 
     public Game getGameById(Long id) {
         return gameRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Не найдено демо с ID: " + id));
+                .orElseThrow(() -> new RuntimeException("Game not found with id: " + id));
     }
 
     public void completeGameTesting(Long gameId, double rating, String feedback) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User tester = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Тестер не найден: " + email));
+                .orElseThrow(() -> new RuntimeException("Tester not found: " + email));
 
+        // Находим активное назначение для этого тестера и игры
         GameAssignment assignment = gameAssignmentRepository
                 .findByGameIdAndTesterIdAndStatus(gameId, tester.getId(), "в работе")
-                .orElseThrow(() -> new RuntimeException("Не найдено активное назначение для игры с ID: " + gameId));
+                .orElseThrow(() -> new RuntimeException("No active assignment found for this game"));
 
+        // Обновляем статус назначения
         assignment.setStatus("завершено");
         gameAssignmentRepository.save(assignment);
+
+        // Здесь можно добавить логику сохранения рейтинга и отзыва
+        // Например, создать отдельную сущность GameReview
     }
 }
