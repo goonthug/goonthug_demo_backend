@@ -35,14 +35,13 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Включаем CORS
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/register", "/api/login", "/error", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/api/games/upload").hasRole("COMPANY")
-                        .requestMatchers("/api/games/download/**").hasRole("TESTER")
-                        .requestMatchers("/api/user/profile").authenticated()
-                        .requestMatchers("/api/games").authenticated()
+                        .requestMatchers("/api/register", "/api/login", "/api/test", "/error", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api/games/upload", "/api/games/{id}").hasRole("COMPANY")
+                        .requestMatchers("/api/games/download/**", "/api/games/{id}/complete").hasRole("TESTER")
+                        .requestMatchers("/api/user/profile", "/api/games").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
@@ -56,13 +55,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5175")); // Разрешённый источник (фронтенд)
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Разрешённые методы
-        configuration.setAllowedHeaders(List.of("*")); // Разрешённые заголовки
-        configuration.setAllowCredentials(true); // Разрешить передачу credentials (например, токенов)
+        configuration.setAllowedOrigins(List.of("http://localhost:5175"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Применить ко всем путям
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 

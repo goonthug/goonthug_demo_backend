@@ -1,178 +1,130 @@
 package com.example.goonthug_demo_backend.service;
 
+import com.example.goonthug_demo_backend.dto.GameDTO;
 import com.example.goonthug_demo_backend.model.Company;
 import com.example.goonthug_demo_backend.model.Game;
 import com.example.goonthug_demo_backend.model.GameAssignment;
 import com.example.goonthug_demo_backend.model.User;
-import com.example.goonthug_demo_backend.repository.CompanyRepository;
 import com.example.goonthug_demo_backend.repository.GameAssignmentRepository;
 import com.example.goonthug_demo_backend.repository.GameRepository;
 import com.example.goonthug_demo_backend.repository.UserRepository;
-import com.example.goonthug_demo_backend.dto.GameDTO;
 import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class GameService {
 
-    private static final Logger logger = LoggerFactory.getLogger(GameService.class);
+    private final GameRepository gameRepository;
+    private final UserRepository userRepository;
+    private final GameAssignmentRepository gameAssignmentRepository;
+    private final UserService userService;
+    private final ModelMapper modelMapper;
 
-    @Autowired
-    private UserRepository userRepository;
+    public GameService(GameRepository gameRepository,
+                       UserRepository userRepository,
+                       GameAssignmentRepository gameAssignmentRepository,
+                       UserService userService,
+                       ModelMapper modelMapper) {
+        this.gameRepository = gameRepository;
+        this.userRepository = userRepository;
+        this.gameAssignmentRepository = gameAssignmentRepository;
+        this.userService = userService;
+        this.modelMapper = modelMapper;
+    }
 
-    @Autowired
-    private GameRepository gameRepository;
-
-    @Autowired
-    private GameAssignmentRepository gameAssignmentRepository;
-
-    @Autowired
-    private CompanyRepository companyRepository;
-
-    @Autowired
-    private ModelMapper modelMapper;
-
-    public Company getCompanyByEmail(String email) {
-        System.out.println("Ищем пользователя с email: " + email);
+    public Game uploadGame(MultipartFile file, String title, String status) throws IOException {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
-        System.out.println("Найден пользователь: " + user.getEmail() + ", роль: " + user.getRole());
-        if (user.getRole() != User.Role.COMPANY) {
-            throw new IllegalArgumentException("Пользователь не является компанией");
-        }
-        Company company = companyRepository.findByUser(user)
-                .orElseThrow(() -> new IllegalArgumentException("Компания не найдена для пользователя"));
-        System.out.println("Найдена компания с ID: " + company.getId());
-        return company;
-    }
+                .orElseThrow(() -> new RuntimeException("User not found: " + email));
 
-    public void save(Game game) {
-        gameRepository.save(game);
-    }
-
-    @Transactional
-    public Game uploadGame(MultipartFile file, String title, String email) throws IOException {
-        logger.debug("Поиск компании с email: {}", email);
-        User companyUser = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Компания не найдена"));
-
-        if (!companyUser.getRole().equals(User.Role.COMPANY)) {
-            throw new IllegalArgumentException("Только компании могут загружать игры");
-        }
-
-        Company company = companyRepository.findByUser(companyUser)
-                .orElseThrow(() -> new IllegalArgumentException("Запись компании не найдена"));
-
-        String fileName = StringUtils.cleanPath(file.getOriginalFilename());
-        String uniqueFileName = System.currentTimeMillis() + "_" + fileName;
-        Path targetLocation = Paths.get("uploads").resolve(uniqueFileName);
-        Files.createDirectories(targetLocation.getParent());
-        Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+        Company company = userService.findCompanyByUser(user);
 
         Game game = new Game();
         game.setTitle(title);
-        game.setFileName(uniqueFileName);
+        game.setFileName(file.getOriginalFilename());
         game.setFileContent(file.getBytes());
+        game.setStatus(status != null ? status : "доступна");
         game.setCompany(company);
-        game.setStatus("available");
 
-        logger.info("Сохранение игры в базу данных: {}", title);
-        Game savedGame = gameRepository.save(game);
-        logger.info("Игра успешно сохранена с ID: {}", savedGame.getId());
-        return savedGame;
+        return gameRepository.save(game);
     }
 
-    @Transactional
-    public void assignGame(Long gameId, String email) {
-        logger.debug("Назначение игры с ID {} пользователю с email {}", gameId, email);
-        User tester = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден: " + email));
-        logger.debug("Найден тестер: email={}, role={}", tester.getEmail(), tester.getRole());
+    public List<GameDTO> getAllGames() {
+        List<Game> games = gameRepository.findAllWithCompany();
+        return games.stream()
+                .map(game -> modelMapper.map(game, GameDTO.class))
+                .collect(Collectors.toList());
+    }
 
-        if (!User.Role.TESTER.equals(tester.getRole())) {
-            throw new IllegalArgumentException("Только тестеры могут брать игры в работу");
-        }
+    public ResponseEntity<Resource> downloadGame(Long gameId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User tester = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Tester not found: " + email));
 
         Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalArgumentException("Игра с ID " + gameId + " не найдена"));
+                .orElseThrow(() -> new RuntimeException("Game not found with id: " + gameId));
 
-        if (gameAssignmentRepository.existsByGameIdAndStatus(gameId, "в работе")) {
-            throw new IllegalArgumentException("Игра уже взята в работу другим тестером");
+        // Проверяем, что игра доступна
+        if (!"доступна".equals(game.getStatus())) {
+            throw new RuntimeException("Game is not available for download");
         }
 
+        // Проверяем только то, что конкретный тестер еще не взял эту игру
+        boolean alreadyAssignedToThisTester = gameAssignmentRepository
+                .existsByGameIdAndTesterIdAndStatus(gameId, tester.getId(), "в работе");
+
+        if (alreadyAssignedToThisTester) {
+            throw new RuntimeException("You have already taken this game");
+        }
+
+        // Создаем новое назначение для этого тестера
         GameAssignment assignment = new GameAssignment();
         assignment.setGame(game);
         assignment.setTester(tester);
         assignment.setStatus("в работе");
-
         gameAssignmentRepository.save(assignment);
-        game.setStatus("в работе");
-        gameRepository.save(game);
-        logger.info("Игра с ID {} назначена тестеру с email {}", gameId, email);
+
+        // Возвращаем файл
+        ByteArrayResource resource = new ByteArrayResource(game.getFileContent());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + game.getFileName() + "\"")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(resource);
     }
 
-    @Transactional
-    public Game downloadGame(Long gameId, String email) {
-        logger.debug("Скачивание игры с ID {} пользователем с email {}", gameId, email);
+    public Game getGameById(Long id) {
+        return gameRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Game not found with id: " + id));
+    }
 
+    public void completeGameTesting(Long gameId, double rating, String feedback) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User tester = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден: " + email));
-        logger.debug("Найден тестер: id={}, email={}, role={}", tester.getId(), tester.getEmail(), tester.getRole());
+                .orElseThrow(() -> new RuntimeException("Tester not found: " + email));
 
-        if (!"TESTER".equals(tester.getRole().name())) {
-            throw new IllegalArgumentException("Только тестеры могут скачивать игры. Текущая роль: " + tester.getRole());
-        }
+        // Находим активное назначение для этого тестера и игры
+        GameAssignment assignment = gameAssignmentRepository
+                .findByGameIdAndTesterIdAndStatus(gameId, tester.getId(), "в работе")
+                .orElseThrow(() -> new RuntimeException("No active assignment found for this game"));
 
-        Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalArgumentException("Игра с ID " + gameId + " не найдена"));
-        logger.debug("Найдена игра: id={}, status={}", game.getId(), game.getStatus());
+        // Обновляем статус назначения
+        assignment.setStatus("завершено");
+        gameAssignmentRepository.save(assignment);
 
-        if (game.getFileContent() == null) {
-            throw new IllegalArgumentException("Файл для игры с ID " + gameId + " не загружен");
-        }
-
-        return game;
-    }
-
-    public List<GameDTO> getAllGames() {
-        try {
-            List<Game> games = gameRepository.findAllWithCompany();
-            logger.info("Найдено игр в game_demo: {}", games.size());
-            games.forEach(game -> {
-                try {
-                    logger.debug("Проверка игры ID: {}, текущий статус: {}", game.getId(), game.getStatus());
-                    if (gameAssignmentRepository.existsByGameIdAndStatus(game.getId(), "в работе")) {
-                        game.setStatus("в работе");
-                        logger.debug("Статус игры {} изменён на 'в работе'", game.getId());
-                    } else {
-                        game.setStatus("available");
-                        logger.debug("Статус игры {} установлен как 'available'", game.getId());
-                    }
-                } catch (Exception e) {
-                    logger.warn("Ошибка при обновлении статуса игры ID {}: {}", game.getId(), e.getMessage());
-                    game.setStatus("unknown");
-                }
-            });
-            return games.stream()
-                    .map(game -> modelMapper.map(game, GameDTO.class))
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            logger.error("Ошибка при получении списка игр: {}", e.getMessage(), e);
-            throw e;
-        }
+        // Здесь можно добавить логику сохранения рейтинга и отзыва
+        // Например, создать отдельную сущность GameReview
     }
 }

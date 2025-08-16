@@ -73,7 +73,7 @@ public class UserController {
     }
 
     @GetMapping("/user/profile")
-    @Transactional(readOnly = true) // Добавляем транзакцию для чтения
+    @Transactional(readOnly = true)
     public ResponseEntity<Map<String, Object>> getProfile(@AuthenticationPrincipal UserDetails userDetails) {
         try {
             if (userDetails == null) {
@@ -84,23 +84,27 @@ public class UserController {
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
-            // Коллекции tests и ratedGames будут загружены благодаря @Transactional
             Map<String, Object> response = new HashMap<>();
             response.put("email", user.getEmail());
             response.put("role", user.getRole().toString());
-            if (user.getTester() != null) {
-                response.put("firstName", user.getTester().getFirstName());
-                response.put("lastName", user.getTester().getLastName());
+
+            if (user.getRole() == User.Role.TESTER) {
+                response.put("firstName", user.getFirstName());
+                response.put("lastName", user.getLastName());
             }
-            if (user.getCompany() != null) {
-                response.put("companyName", user.getCompany().getCompanyName());
+
+            if (user.getRole() == User.Role.COMPANY) {
+                response.put("companyName", user.getCompanyName());
             }
-            response.put("tests", user.getTests()); // Теперь безопасно
-            response.put("ratedGames", user.getRatedGames()); // Теперь безопасно
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("error", "Ошибка загрузки профиля: " + e.getMessage()));
         }
+    }
+
+    @GetMapping("/test")
+    public ResponseEntity<String> test() {
+        return ResponseEntity.ok("Test endpoint is accessible");
     }
 }
