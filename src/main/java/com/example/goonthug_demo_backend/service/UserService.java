@@ -1,7 +1,6 @@
 package com.example.goonthug_demo_backend.service;
 
 import com.example.goonthug_demo_backend.dto.UserRegistrationDto;
-import com.example.goonthug_demo_backend.model.Company;
 import com.example.goonthug_demo_backend.model.User;
 import com.example.goonthug_demo_backend.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -46,19 +45,5 @@ public class UserService {
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден с email: " + email));
-    }
-
-    public Company findCompanyByUser(User user) {
-        if (user.getRole() != User.Role.COMPANY) {
-            throw new RuntimeException("Пользователь не является компанией");
-        }
-
-        // Создаем объект Company на основе данных пользователя
-        Company company = new Company();
-        company.setId(user.getId());
-        company.setCompanyName(user.getCompanyName());
-        company.setUser(user);
-
-        return company;
     }
 }

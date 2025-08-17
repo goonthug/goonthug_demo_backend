@@ -1,7 +1,6 @@
 package com.example.goonthug_demo_backend.service;
 
 import com.example.goonthug_demo_backend.dto.GameDTO;
-import com.example.goonthug_demo_backend.model.Company;
 import com.example.goonthug_demo_backend.model.Game;
 import com.example.goonthug_demo_backend.model.GameAssignment;
 import com.example.goonthug_demo_backend.model.User;
@@ -28,18 +27,15 @@ public class GameService {
     private final GameRepository gameRepository;
     private final UserRepository userRepository;
     private final GameAssignmentRepository gameAssignmentRepository;
-    private final UserService userService;
     private final ModelMapper modelMapper;
 
     public GameService(GameRepository gameRepository,
                        UserRepository userRepository,
                        GameAssignmentRepository gameAssignmentRepository,
-                       UserService userService,
                        ModelMapper modelMapper) {
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
         this.gameAssignmentRepository = gameAssignmentRepository;
-        this.userService = userService;
         this.modelMapper = modelMapper;
     }
 
@@ -48,20 +44,34 @@ public class GameService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found: " + email));
 
-        Company company = userService.findCompanyByUser(user);
+        if (user.getRole() != User.Role.COMPANY) {
+            throw new RuntimeException("Only companies can upload games");
+        }
 
         Game game = new Game();
         game.setTitle(title);
         game.setFileName(file.getOriginalFilename());
         game.setFileContent(file.getBytes());
         game.setStatus(status != null ? status : "доступна");
-        game.setCompany(company);
+        game.setCompany(user);
 
         return gameRepository.save(game);
     }
 
     public List<GameDTO> getAllGames() {
-        List<Game> games = gameRepository.findAllWithCompany();
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found: " + email));
+
+        List<Game> games;
+
+        // Тестеры видят только доступные игры, компании видят все
+        if (user.getRole() == User.Role.TESTER) {
+            games = gameRepository.findAvailableGames();
+        } else {
+            games = gameRepository.findAllWithCompany();
+        }
+
         return games.stream()
                 .map(game -> modelMapper.map(game, GameDTO.class))
                 .collect(Collectors.toList());
@@ -126,5 +136,79 @@ public class GameService {
 
         // Здесь можно добавить логику сохранения рейтинга и отзыва
         // Например, создать отдельную сущность GameReview
+    }
+
+    public void hideGame(Long gameId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found: " + email));
+
+        if (user.getRole() != User.Role.COMPANY) {
+            throw new RuntimeException("Only companies can hide games");
+        }
+
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new RuntimeException("Game not found with id: " + gameId));
+
+        // Проверяем, что игра принадлежит этой компании
+        if (!game.getCompany().getId().equals(user.getId())) {
+            throw new RuntimeException("You can only hide your own games");
+        }
+
+        // Скрываем игру
+        game.setStatus("скрыта");
+        gameRepository.save(game);
+    }
+
+    public void finishDemoGame(Long gameId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found: " + email));
+
+        if (user.getRole() != User.Role.COMPANY) {
+            throw new RuntimeException("Only companies can finish demo games");
+        }
+
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new RuntimeException("Game not found with id: " + gameId));
+
+        // Проверяем, что игра принадлежит этой компании
+        if (!game.getCompany().getId().equals(user.getId())) {
+            throw new RuntimeException("You can only finish demo for your own games");
+        }
+
+        // Завершаем демо-период
+        game.setStatus("демо завершено");
+        gameRepository.save(game);
+
+        // Завершаем все активные назначения для этой игры
+        List<GameAssignment> activeAssignments = gameAssignmentRepository
+                .findByGameId(gameId).stream()
+                .filter(assignment -> "в работе".equals(assignment.getStatus()))
+                .toList();
+
+        for (GameAssignment assignment : activeAssignments) {
+            assignment.setStatus("демо завершено");
+            gameAssignmentRepository.save(assignment);
+        }
+    }
+
+    public List<GameDTO> getGamesByCurrentCompany() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found: " + email));
+
+        if (user.getRole() != User.Role.COMPANY) {
+            throw new RuntimeException("Only companies can view their games");
+        }
+
+        // Находим все игры этой компании
+        List<Game> companyGames = gameRepository.findAllWithCompany().stream()
+                .filter(game -> game.getCompany().getId().equals(user.getId()))
+                .toList();
+
+        return companyGames.stream()
+                .map(game -> modelMapper.map(game, GameDTO.class))
+                .collect(Collectors.toList());
     }
 }

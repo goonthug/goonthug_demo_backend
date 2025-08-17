@@ -24,9 +24,9 @@ public class Game {
     private String title;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_id")
+    @JoinColumn(name = "company_id", referencedColumnName = "id")
     @JsonIgnore
-    private Company company;
+    private User company;
 
     // Геттеры и сеттеры (только необходимые для примера)
     public Long getId() { return id; }
@@ -39,8 +39,8 @@ public class Game {
     public void setTitle(String title) { this.title = title; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
-    public Company getCompany() { return company; }
-    public void setCompany(Company company) { this.company = company; }
+    public User getCompany() { return company; }
+    public void setCompany(User company) { this.company = company; }
 
     @Override
     public String toString() {
