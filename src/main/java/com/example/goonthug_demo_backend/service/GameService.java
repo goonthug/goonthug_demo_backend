@@ -73,8 +73,42 @@ public class GameService {
         }
 
         return games.stream()
-                .map(game -> modelMapper.map(game, GameDTO.class))
+                .map(game -> {
+                    GameDTO gameDTO = modelMapper.map(game, GameDTO.class);
+
+                    // Для тестеров определяем статус игры относительно них
+                    if (user.getRole() == User.Role.TESTER) {
+                        String gameStatus = determineGameStatusForTester(game, user);
+                        gameDTO.setStatus(gameStatus);
+                    }
+
+                    return gameDTO;
+                })
                 .collect(Collectors.toList());
+    }
+
+    private String determineGameStatusForTester(Game game, User tester) {
+        // Проверяем, есть ли назначение этой игры для данного тестера
+        var assignment = gameAssignmentRepository.findByGameIdAndTesterId(game.getId(), tester.getId());
+
+        if (assignment.isEmpty()) {
+            // Тестер не брал эту игру - она доступна
+            return "доступна";
+        }
+
+        GameAssignment gameAssignment = assignment.get();
+        String assignmentStatus = gameAssignment.getStatus();
+
+        switch (assignmentStatus) {
+            case "в работе":
+                return "в работе";
+            case "завершено":
+                return "отработано";
+            case "демо завершено":
+                return "демо завершено";
+            default:
+                return "доступна";
+        }
     }
 
     public ResponseEntity<Resource> downloadGame(Long gameId) {
