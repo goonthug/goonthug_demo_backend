@@ -11,8 +11,8 @@ public class Game {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "file_content")
-    private byte[] fileContent;
+    @Column(name = "file_path")
+    private String filePath;
 
     @Column(name = "file_name")
     private String fileName;
@@ -31,8 +31,8 @@ public class Game {
     // Геттеры и сеттеры (только необходимые для примера)
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public byte[] getFileContent() { return fileContent; }
-    public void setFileContent(byte[] fileContent) { this.fileContent = fileContent; }
+    public String getFilePath() { return filePath; }
+    public void setFilePath(String filePath) { this.filePath = filePath; }
     public String getFileName() { return fileName; }
     public void setFileName(String fileName) { this.fileName = fileName; }
     public String getTitle() { return title; }
@@ -48,6 +48,7 @@ public class Game {
                 "id=" + id +
                 ", title='" + title + '\'' +
                 ", fileName='" + fileName + '\'' +
+                ", filePath='" + filePath + '\'' +
                 ", status='" + status + '\'' +
                 ", companyId=" + (company != null ? company.getId() : null) +
                 '}';

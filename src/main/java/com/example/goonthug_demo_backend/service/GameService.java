@@ -8,7 +8,8 @@ import com.example.goonthug_demo_backend.repository.GameAssignmentRepository;
 import com.example.goonthug_demo_backend.repository.GameRepository;
 import com.example.goonthug_demo_backend.repository.UserRepository;
 import org.modelmapper.ModelMapper;
-import org.springframework.core.io.ByteArrayResource;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -18,7 +19,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,6 +33,9 @@ public class GameService {
     private final UserRepository userRepository;
     private final GameAssignmentRepository gameAssignmentRepository;
     private final ModelMapper modelMapper;
+
+    @Value("${file.upload-dir}")
+    private String uploadDir;
 
     public GameService(GameRepository gameRepository,
                        UserRepository userRepository,
@@ -48,10 +56,28 @@ public class GameService {
             throw new RuntimeException("Only companies can upload games");
         }
 
+        // Создаем папку uploads если её нет
+        Path uploadPath = Paths.get(uploadDir);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        // Генерируем уникальное имя файла с сохранением оригинального расширения
+        String originalFileName = file.getOriginalFilename();
+        String fileExtension = "";
+        if (originalFileName != null && originalFileName.contains(".")) {
+            fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
+        }
+        String uniqueFileName = System.currentTimeMillis() + "_" + UUID.randomUUID().toString() + fileExtension;
+
+        // Сохраняем файл в файловую систему
+        Path filePath = uploadPath.resolve(uniqueFileName);
+        Files.copy(file.getInputStream(), filePath);
+
         Game game = new Game();
         game.setTitle(title);
-        game.setFileName(file.getOriginalFilename());
-        game.setFileContent(file.getBytes());
+        game.setFileName(originalFileName);
+        game.setFilePath(filePath.toString());
         game.setStatus(status != null ? status : "доступна");
         game.setCompany(user);
 
@@ -139,14 +165,41 @@ public class GameService {
         assignment.setStatus("в работе");
         gameAssignmentRepository.save(assignment);
 
-        // Возвращаем файл
-        ByteArrayResource resource = new ByteArrayResource(game.getFileContent());
+        // Проверяем существование файла
+        Path filePath = Paths.get(game.getFilePath());
+        if (!Files.exists(filePath)) {
+            throw new RuntimeException("Game file not found: " + game.getFilePath());
+        }
 
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + game.getFileName() + "\"")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(resource);
+        // Возвращаем файл с оригинальным именем и расширением
+        FileSystemResource resource = new FileSystemResource(filePath);
+
+        // Определяем MIME тип автоматически
+        String contentType = "application/octet-stream";
+        try {
+            contentType = Files.probeContentType(filePath);
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+        } catch (IOException e) {
+            // Используем дефолтный тип
+        }
+
+        try {
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + game.getFileName() + "\"")
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .contentLength(resource.contentLength())
+                    .body(resource);
+        } catch (IOException e) {
+            // Если не удается получить размер файла, возвращаем без указания размера
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + game.getFileName() + "\"")
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .body(resource);
+        }
     }
 
     public Game getGameById(Long id) {
