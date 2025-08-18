@@ -7,6 +7,7 @@ import com.example.goonthug_demo_backend.model.User;
 import com.example.goonthug_demo_backend.repository.GameAssignmentRepository;
 import com.example.goonthug_demo_backend.repository.GameRepository;
 import com.example.goonthug_demo_backend.repository.UserRepository;
+import com.example.goonthug_demo_backend.repository.FeedbackRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
@@ -32,6 +33,7 @@ public class GameService {
     private final GameRepository gameRepository;
     private final UserRepository userRepository;
     private final GameAssignmentRepository gameAssignmentRepository;
+    private final FeedbackRepository feedbackRepository;
     private final ModelMapper modelMapper;
 
     @Value("${file.upload-dir}")
@@ -40,10 +42,12 @@ public class GameService {
     public GameService(GameRepository gameRepository,
                        UserRepository userRepository,
                        GameAssignmentRepository gameAssignmentRepository,
+                       FeedbackRepository feedbackRepository,
                        ModelMapper modelMapper) {
         this.gameRepository = gameRepository;
         this.userRepository = userRepository;
         this.gameAssignmentRepository = gameAssignmentRepository;
+        this.feedbackRepository = feedbackRepository;
         this.modelMapper = modelMapper;
     }
 
@@ -207,6 +211,10 @@ public class GameService {
                 .orElseThrow(() -> new RuntimeException("Game not found with id: " + id));
     }
 
+    /**
+     * @deprecated Используйте FeedbackService.createFinalFeedbackAndCompleteTest() вместо этого метода
+     */
+    @Deprecated
     public void completeGameTesting(Long gameId, double rating, String feedback) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User tester = userRepository.findByEmail(email)
@@ -217,12 +225,17 @@ public class GameService {
                 .findByGameIdAndTesterIdAndStatus(gameId, tester.getId(), "в работе")
                 .orElseThrow(() -> new RuntimeException("No active assignment found for this game"));
 
+        // Проверяем, что финальный фидбек еще не оставлен
+        if (feedbackRepository.existsFinalFeedbackForAssignment(assignment)) {
+            throw new RuntimeException("Final feedback already exists for this assignment");
+        }
+
         // Обновляем статус назначения
         assignment.setStatus("завершено");
         gameAssignmentRepository.save(assignment);
 
-        // Здесь можно добавить логику сохранения рейтинга и отзыва
-        // Например, создать отдельную сущность GameReview
+        // Данный метод помечен как устаревший.
+        // Используйте FeedbackService.createFinalFeedbackAndCompleteTest() для создания финального фидбека
     }
 
     public void hideGame(Long gameId) {
