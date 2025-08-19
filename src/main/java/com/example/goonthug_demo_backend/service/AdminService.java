@@ -5,6 +5,7 @@ import com.example.goonthug_demo_backend.model.*;
 import com.example.goonthug_demo_backend.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,8 +43,9 @@ public class AdminService {
         );
     }
 
+    @Transactional(readOnly = true)
     public List<AdminGameStatsDTO> getAllGamesWithStats() {
-        List<Game> games = gameRepository.findAll();
+        List<Game> games = gameRepository.findAllWithCompany();
 
         return games.stream().map(game -> {
             Long totalAssignments = gameAssignmentRepository.countByGameId(game.getId());
