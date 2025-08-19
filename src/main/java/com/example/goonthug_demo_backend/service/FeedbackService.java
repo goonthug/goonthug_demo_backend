@@ -34,6 +34,12 @@ public class FeedbackService {
         User tester = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Тестер не найден: " + email));
 
+        // Проверяем, что пользователь не заблокирован
+        if (tester.getBlocked() != null && tester.getBlocked()) {
+            throw new RuntimeException("Ваш аккаунт заблокирован. Причина: " +
+                (tester.getBlockedReason() != null ? tester.getBlockedReason() : "Не указана"));
+        }
+
         // Находим активное назначение для этого тестера и игры
         GameAssignment assignment = gameAssignmentRepository
                 .findByGameIdAndTesterIdAndStatus(request.getGameId(), tester.getId(), "в работе")

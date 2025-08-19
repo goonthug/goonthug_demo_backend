@@ -1,6 +1,7 @@
 package com.example.goonthug_demo_backend.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -28,12 +29,24 @@ public class User {
     @Column(name = "company_name")
     private String companyName;
 
+    @Column(name = "blocked", nullable = false)
+    private Boolean blocked = false;
+
+    @Column(name = "blocked_at")
+    private LocalDateTime blockedAt;
+
+    @Column(name = "blocked_reason")
+    private String blockedReason;
+
     public enum Role {
-        TESTER, COMPANY
+        TESTER, COMPANY, ADMIN
     }
 
-    public User() {}
+    public User() {
+        this.blocked = false;
+    }
 
+    // Getters and setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -55,6 +68,23 @@ public class User {
     public String getCompanyName() { return companyName; }
     public void setCompanyName(String companyName) { this.companyName = companyName; }
 
+    public Boolean getBlocked() { return blocked; }
+    public void setBlocked(Boolean blocked) {
+        this.blocked = blocked;
+        if (blocked && this.blockedAt == null) {
+            this.blockedAt = LocalDateTime.now();
+        } else if (!blocked) {
+            this.blockedAt = null;
+            this.blockedReason = null;
+        }
+    }
+
+    public LocalDateTime getBlockedAt() { return blockedAt; }
+    public void setBlockedAt(LocalDateTime blockedAt) { this.blockedAt = blockedAt; }
+
+    public String getBlockedReason() { return blockedReason; }
+    public void setBlockedReason(String blockedReason) { this.blockedReason = blockedReason; }
+
     @Override
     public String toString() {
         return "User{" +
@@ -64,6 +94,7 @@ public class User {
                 ", firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", companyName='" + companyName + '\'' +
+                ", blocked=" + blocked +
                 '}';
     }
 }

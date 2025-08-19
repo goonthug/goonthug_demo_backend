@@ -49,4 +49,31 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
 
     // Найти все фидбеки определенного типа
     List<Feedback> findByFeedbackTypeOrderByCreatedAtDesc(Feedback.FeedbackType feedbackType);
+
+    // Новые методы для админ панели
+    @Query("SELECT COUNT(f) FROM Feedback f WHERE f.feedbackType = :feedbackType")
+    Long countByFeedbackType(@Param("feedbackType") Feedback.FeedbackType feedbackType);
+
+    @Query("SELECT COUNT(f) FROM Feedback f WHERE f.gameAssignment.game.id = :gameId")
+    Long countByGameId(@Param("gameId") Long gameId);
+
+    @Query("SELECT COUNT(f) FROM Feedback f WHERE f.tester.id = :testerId")
+    Long countByTesterId(@Param("testerId") Long testerId);
+
+    @Query("SELECT COUNT(f) FROM Feedback f WHERE f.gameAssignment.game.company.id = :companyId")
+    Long countByCompanyId(@Param("companyId") Long companyId);
+
+    @Query("SELECT COUNT(f) FROM Feedback f WHERE f.gameAssignment = :assignment")
+    Long countByGameAssignment(@Param("assignment") GameAssignment assignment);
+
+    @Query("SELECT AVG(f.rating) FROM Feedback f WHERE f.gameAssignment.game.id = :gameId AND f.rating IS NOT NULL")
+    Double getAverageRatingByGameId(@Param("gameId") Long gameId);
+
+    @Query("SELECT f FROM Feedback f " +
+           "JOIN FETCH f.gameAssignment ga " +
+           "JOIN FETCH ga.game g " +
+           "JOIN FETCH g.company " +
+           "JOIN FETCH f.tester " +
+           "ORDER BY f.createdAt DESC")
+    List<Feedback> findAllOrderByCreatedAtDesc();
 }

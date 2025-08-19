@@ -93,6 +93,12 @@ public class GameService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found: " + email));
 
+        // Проверяем блокировку для тестеров
+        if (user.getRole() == User.Role.TESTER && user.getBlocked() != null && user.getBlocked()) {
+            throw new RuntimeException("Ваш аккаунт заблокирован. Причина: " +
+                (user.getBlockedReason() != null ? user.getBlockedReason() : "Не указана"));
+        }
+
         List<Game> games;
 
         // Тестеры видят только доступные игры, компании видят все
@@ -145,6 +151,12 @@ public class GameService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User tester = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Tester not found: " + email));
+
+        // Проверяем, что пользователь не заблокирован
+        if (tester.getBlocked() != null && tester.getBlocked()) {
+            throw new RuntimeException("Ваш аккаунт заблокирован. Причина: " +
+                (tester.getBlockedReason() != null ? tester.getBlockedReason() : "Не указана"));
+        }
 
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new RuntimeException("Game not found with id: " + gameId));
