@@ -129,4 +129,58 @@ public class GameController {
                     .body("Внутренняя ошибка сервера: " + e.getMessage());
         }
     }
+
+    @PutMapping("/{id}/hide")
+    @PreAuthorize("hasRole('COMPANY')")
+    @Operation(summary = "Скрыть игру", description = "Скрывает игру от тестеров (только для компаний)")
+    @SecurityRequirement(name = "Bearer Authentication")
+    public ResponseEntity<?> hideGame(@PathVariable Long id) {
+        try {
+            logger.info("Компания скрывает игру с id: {}", id);
+            gameService.hideGame(id);
+            return ResponseEntity.ok("Игра успешно скрыта");
+        } catch (RuntimeException e) {
+            logger.error("Ошибка при скрытии игры {}: {}", id, e.getMessage());
+            return ResponseEntity.badRequest().body("Ошибка при скрытии игры: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("Неожиданная ошибка при скрытии игры {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Внутренняя ошибка сервера: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}/finish-demo")
+    @PreAuthorize("hasRole('COMPANY')")
+    @Operation(summary = "Завершить демо-период", description = "Завершает демо-период игры (только для компаний)")
+    @SecurityRequirement(name = "Bearer Authentication")
+    public ResponseEntity<?> finishDemoGame(@PathVariable Long id) {
+        try {
+            logger.info("Компания завершает демо-период игры с id: {}", id);
+            gameService.finishDemoGame(id);
+            return ResponseEntity.ok("Демо-период игры успешно завершен");
+        } catch (RuntimeException e) {
+            logger.error("Ошибка при завершении демо-периода игры {}: {}", id, e.getMessage());
+            return ResponseEntity.badRequest().body("Ошибка при завершении демо-периода: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("Неожиданная ошибка при завершении демо-периода игры {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Внутренняя ошибка сервера: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/my-games")
+    @PreAuthorize("hasRole('COMPANY')")
+    @Operation(summary = "Получить игры компании", description = "Возвращает список игр текущей компании")
+    @SecurityRequirement(name = "Bearer Authentication")
+    public ResponseEntity<List<GameDTO>> getMyGames() {
+        try {
+            logger.info("Получение игр текущей компании");
+            List<GameDTO> games = gameService.getGamesByCurrentCompany();
+            logger.info("Найдено игр для компании: {}", games.size());
+            return ResponseEntity.ok(games);
+        } catch (Exception e) {
+            logger.error("Ошибка при получении игр компании: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }

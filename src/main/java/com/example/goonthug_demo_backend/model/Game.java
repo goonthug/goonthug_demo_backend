@@ -11,8 +11,8 @@ public class Game {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "file_content")
-    private byte[] fileContent;
+    @Column(name = "file_path")
+    private String filePath;
 
     @Column(name = "file_name")
     private String fileName;
@@ -24,23 +24,23 @@ public class Game {
     private String title;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_id")
+    @JoinColumn(name = "company_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_game_company_user"))
     @JsonIgnore
-    private Company company;
+    private User company;
 
     // Геттеры и сеттеры (только необходимые для примера)
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public byte[] getFileContent() { return fileContent; }
-    public void setFileContent(byte[] fileContent) { this.fileContent = fileContent; }
+    public String getFilePath() { return filePath; }
+    public void setFilePath(String filePath) { this.filePath = filePath; }
     public String getFileName() { return fileName; }
     public void setFileName(String fileName) { this.fileName = fileName; }
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
-    public Company getCompany() { return company; }
-    public void setCompany(Company company) { this.company = company; }
+    public User getCompany() { return company; }
+    public void setCompany(User company) { this.company = company; }
 
     @Override
     public String toString() {
@@ -48,6 +48,7 @@ public class Game {
                 "id=" + id +
                 ", title='" + title + '\'' +
                 ", fileName='" + fileName + '\'' +
+                ", filePath='" + filePath + '\'' +
                 ", status='" + status + '\'' +
                 ", companyId=" + (company != null ? company.getId() : null) +
                 '}';
