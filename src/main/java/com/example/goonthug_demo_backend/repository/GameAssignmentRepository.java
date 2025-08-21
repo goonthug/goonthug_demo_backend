@@ -31,9 +31,9 @@ public interface GameAssignmentRepository extends JpaRepository<GameAssignment, 
     @Query("SELECT COUNT(ga) FROM GameAssignment ga WHERE ga.game.id = :gameId AND ga.status = :status")
     long countByGameIdAndStatus(@Param("gameId") Long gameId, @Param("status") String status);
 
-    // Находим назначение для конкретного тестера и игры (любой статус)
-    @Query("SELECT ga FROM GameAssignment ga WHERE ga.game.id = :gameId AND ga.tester.id = :testerId")
-    Optional<GameAssignment> findByGameIdAndTesterId(@Param("gameId") Long gameId, @Param("testerId") Long testerId);
+    // Находим назначение для конкретного тестера и игры (любой статус) - возвращаем самую новую запись
+    @Query("SELECT ga FROM GameAssignment ga WHERE ga.game.id = :gameId AND ga.tester.id = :testerId ORDER BY ga.assignedAt DESC")
+    List<GameAssignment> findByGameIdAndTesterId(@Param("gameId") Long gameId, @Param("testerId") Long testerId);
 
     // Новые методы для админ панели
     @Query("SELECT COUNT(ga) FROM GameAssignment ga WHERE ga.status = :status")
