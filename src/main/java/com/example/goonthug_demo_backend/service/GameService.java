@@ -125,14 +125,15 @@ public class GameService {
 
     private String determineGameStatusForTester(Game game, User tester) {
         // Проверяем, есть ли назначение этой игры для данного тестера
-        var assignment = gameAssignmentRepository.findByGameIdAndTesterId(game.getId(), tester.getId());
+        var assignments = gameAssignmentRepository.findByGameIdAndTesterId(game.getId(), tester.getId());
 
-        if (assignment.isEmpty()) {
+        if (assignments.isEmpty()) {
             // Тестер не брал эту игру - она доступна
             return "доступна";
         }
 
-        GameAssignment gameAssignment = assignment.get();
+        // Берем самую актуальную запись (первую в отсортированном по дате списке)
+        GameAssignment gameAssignment = assignments.get(0);
         String assignmentStatus = gameAssignment.getStatus();
 
         switch (assignmentStatus) {
